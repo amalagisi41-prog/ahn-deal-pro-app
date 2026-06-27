@@ -1617,7 +1617,7 @@ function saveSettings(){
   cLTL();
 
   // Flash confirmation
-  const btn = document.querySelector('#tab-settings button[onclick="saveSettings()"]');
+  const btn = document.querySelector('button[onclick="saveSettings()"]');
   if(btn){
     const orig=btn.textContent;
     btn.textContent='✓ Settings Saved';
