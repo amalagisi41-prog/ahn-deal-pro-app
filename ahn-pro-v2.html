@@ -272,11 +272,11 @@ input[type=number]:focus{color:var(--teal)}
 /* ── BOTTOM TAB ── */
 .btab{height:calc(var(--tab-h) + var(--sab));flex-shrink:0;background:var(--navy2);border-top:1px solid var(--border2);display:flex;align-items:flex-start;justify-content:space-around;padding:0 4px;padding-bottom:var(--sab);overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
 .btab::-webkit-scrollbar{display:none}
-.bti{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 8px;border-radius:9px;cursor:pointer;transition:all 0.15s;text-decoration:none;flex:1;min-width:52px;-webkit-tap-highlight-color:transparent;border:none;background:none;font-family:inherit}
+.bti{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 4px;border-radius:9px;cursor:pointer;transition:all 0.15s;text-decoration:none;flex:1;min-width:44px;-webkit-tap-highlight-color:transparent;border:none;background:none;font-family:inherit}
 .bti:active{background:rgba(255,255,255,0.05)}
 .bti-icon{width:22px;height:22px}
 .bti-icon path,.bti-icon circle,.bti-icon rect,.bti-icon polyline,.bti-icon line{stroke:var(--muted);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:stroke 0.15s}
-.bti-lbl{font-size:0.6rem;font-weight:600;color:var(--muted);letter-spacing:0.02em;transition:color 0.15s}
+.bti-lbl{font-size:0.55rem;font-weight:600;color:var(--muted);letter-spacing:0.01em;transition:color 0.15s}
 .bti.on .bti-lbl{color:var(--teal)}
 .bti.on .bti-icon path,.bti.on .bti-icon circle,.bti.on .bti-icon rect,.bti.on .bti-icon polyline,.bti.on .bti-icon line{stroke:var(--teal)}
 .bti-bar{width:18px;height:2px;background:var(--teal);border-radius:2px;display:none;margin-top:-1px}
@@ -595,7 +595,7 @@ input[type=hidden]{display:none}
   </div>
 
   <!-- MORTGAGE CALCULATOR (Phase 7) -->
-  <div id="mortgage-section" style="display:none;background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:14px;margin-bottom:12px">
+  <div id="mortgage-section" style="display:block;background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:14px;margin-bottom:12px">
     <div style="font-weight:700;font-size:0.85rem;color:var(--off);margin-bottom:12px;letter-spacing:0.03em">MORTGAGE CALCULATOR</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
       <div>
@@ -1029,25 +1029,33 @@ input[type=hidden]{display:none}
 </div>
 
 <!-- ══════════════════ MAP TAB (Phase 2) ══════════════════ -->
-<div id="tab-map" class="hidden">
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-    <button onclick="initMapAndSearch()" style="padding:11px 15px;background:var(--teal);border:none;border-radius:var(--r2);font-family:inherit;font-size:0.78rem;font-weight:700;color:var(--navy);cursor:pointer;letter-spacing:-0.01em;-webkit-tap-highlight-color:transparent">🗺 Search on Map</button>
-    <button onclick="centerMapOnCT()" style="padding:11px 15px;background:var(--card2);border:1px solid var(--border2);border-radius:var(--r2);font-family:inherit;font-size:0.78rem;font-weight:700;color:var(--off);cursor:pointer;letter-spacing:-0.01em;-webkit-tap-highlight-color:transparent">📍 Center on CT</button>
+<div id="tab-map" class="hidden" style="padding:0 !important">
+  <!-- Map Search Bar -->
+  <div style="padding:10px 14px;background:var(--navy);position:sticky;top:0;z-index:10;display:flex;gap:8px">
+    <input id="map-search-input" type="text" placeholder="Search city, ZIP, or neighborhood…"
+      style="flex:1;padding:10px 14px;background:var(--card2);border:1px solid var(--border2);border-radius:10px;color:var(--white);font-family:inherit;font-size:0.82rem;outline:none"
+      onkeydown="if(event.key==='Enter') mapSearchFromInput()">
+    <button onclick="mapSearchFromInput()" style="padding:10px 14px;background:var(--teal);border:none;border-radius:10px;font-family:inherit;font-size:0.78rem;font-weight:700;color:var(--navy);cursor:pointer;white-space:nowrap">Search</button>
   </div>
-  <div id="map-container"></div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-    <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:12px">
-      <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--teal);margin-bottom:8px">Deal Quality</div>
-      <div style="display:flex;flex-direction:column;gap:6px;font-size:0.7rem">
-        <div style="display:flex;align-items:center;gap:6px"><div style="width:12px;height:12px;background:var(--green);border-radius:3px"></div><span>Strong Deal (CAP 6%+)</span></div>
-        <div style="display:flex;align-items:center;gap:6px"><div style="width:12px;height:12px;background:var(--amber);border-radius:3px"></div><span>Borderline (CAP 4-6%)</span></div>
-        <div style="display:flex;align-items:center;gap:6px"><div style="width:12px;height:12px;background:var(--red);border-radius:3px"></div><span>Review (CAP &lt;4%)</span></div>
-      </div>
-    </div>
-    <div id="map-info-panel" style="background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:12px;font-size:0.75rem;color:var(--muted);text-align:center">
-      Click map pins or search to view properties
-    </div>
+
+  <!-- Full-width map like Backflip -->
+  <div id="map-container" style="width:100%;height:55vw;max-height:340px;min-height:200px;position:relative"></div>
+
+  <!-- Legend bar -->
+  <div style="background:var(--card);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:14px;font-size:0.62rem;color:var(--muted)">
+    <div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;background:var(--green);border-radius:50%"></div>Strong (6%+)</div>
+    <div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;background:var(--amber);border-radius:50%"></div>Borderline (4-6%)</div>
+    <div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;background:var(--red);border-radius:50%"></div>Review (&lt;4%)</div>
+    <button onclick="centerMapOnCT()" style="margin-left:auto;background:none;border:1px solid var(--border2);border-radius:6px;padding:4px 8px;color:var(--muted);font-size:0.6rem;cursor:pointer;font-family:inherit">Reset View</button>
   </div>
+
+  <!-- Property info panel - shows on pin click -->
+  <div id="map-info-panel" style="padding:14px;font-size:0.75rem;color:var(--muted);text-align:center">
+    Search above or tap a map pin to view property details
+  </div>
+
+  <!-- Properties list from map search -->
+  <div id="map-props-list" style="padding:0 14px 14px;display:grid;gap:10px"></div>
 </div>
 
 <!-- ══════════════════ PRESENT TAB ══════════════════ -->
@@ -1273,6 +1281,8 @@ function goTab(t){
   document.getElementById('page-title').textContent=titles[t]||t;
   document.getElementById('page-sub').textContent=subs[t]||'';
   document.getElementById('main-body').scrollTop=0;
+  // Remove body padding for map tab (full-width map like Backflip)
+  document.getElementById('main-body').style.padding = t==='map' ? '0' : '0 14px';
   if(t==='compare')cCmp();
   if(t==='search'){initSearch();}
   if(t==='map'){initMapTab();}
@@ -1869,6 +1879,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     const btn=document.querySelector('#tab-settings button[onclick="notifyMLS()"]');
     if(btn){btn.textContent='✓ You\'re on the list';btn.disabled=true;btn.style.color='var(--teal)';}
   }
+  calcMortgage();
 });
 
 /* ══════════════════════════════════════════
@@ -2091,13 +2102,19 @@ function selectPropertyFromMap(idx){
   `;
 }
 
+function mapSearchFromInput(){
+  const q = document.getElementById('map-search-input').value.trim();
+  if(!q) return;
+  if(!mapInstance) initMapBase();
+  runMapSearch(q);
+}
+
 function initMapAndSearch(){
   if(!mapInstance) initMapBase();
   centerMapOnCT();
 
   const input = document.getElementById('srch-input').value.trim();
   if(input && input.length > 0 && !isMLS(input)) {
-    setStatusMsg('Searching on map…', 'Finding properties in this area');
     runMapSearch(input);
   }
 }
@@ -2157,7 +2174,31 @@ Use realistic CT coordinates. Make rent ~0.7-1% of price.`
       mapInstance.fitBounds(group.getBounds(), {padding: [50, 50]});
     }
 
-    setStatusMsg(`${mapSearchResults.length} properties found on map`, 'Click markers to view details');
+    // Render properties list below map (like Backflip)
+    const mapPropsList = document.getElementById('map-props-list');
+    if(mapPropsList) {
+      mapPropsList.innerHTML = mapSearchResults.map((p, i) => {
+        const scoreColor = p.cap >= 6 ? 'var(--teal)' : p.cap >= 4 ? 'var(--amber)' : 'var(--red)';
+        const scoreTxt = p.cap >= 6 ? 'GREAT DEAL' : p.cap >= 4 ? 'BORDERLINE' : 'POOR DEAL';
+        return `<div onclick="selectPropertyFromMap(${i})" style="background:var(--card);border:1px solid var(--border2);border-radius:var(--r2);padding:12px;cursor:pointer;display:flex;gap:12px;align-items:center">
+          <div style="font-size:2rem;flex-shrink:0">🏠</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:0.82rem;color:var(--off);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.address}</div>
+            <div style="font-size:0.68rem;color:var(--muted);margin-top:2px">${p.city} · ${p.beds}bd ${p.baths}ba · ${p.sqft?.toLocaleString()||'—'} sqft</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+              <span style="font-size:0.9rem;font-weight:800;color:var(--off)">$${(p.price/1000).toFixed(0)}k</span>
+              <span style="font-size:0.62rem;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(0,0,0,0.3);color:${scoreColor}">${scoreTxt}</span>
+            </div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:1.1rem;font-weight:800;color:${scoreColor}">${p.cap.toFixed(1)}%</div>
+            <div style="font-size:0.58rem;color:var(--muted);font-weight:600">CAP RATE</div>
+            <div style="font-size:0.7rem;color:${p.mcf>=0?'var(--teal)':'var(--red)'};font-weight:600;margin-top:2px">$${p.mcf?.toLocaleString()||'—'}/mo</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+    document.getElementById('map-info-panel').innerHTML = `<div style="text-align:left;color:var(--muted);font-size:0.72rem">${mapSearchResults.length} properties found · Tap a card or map pin to analyze</div>`;
   } catch(e) {
     console.error('Map search error:', e);
     setStatusMsg('Search failed', 'Check API key and try again');
