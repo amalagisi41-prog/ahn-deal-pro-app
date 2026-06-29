@@ -2428,8 +2428,15 @@ Use realistic CT coordinates. Make rent ~0.7-1% of price.`
    MAIN CLAUDE AI SEARCH
 ══════════════════════════════════════ */
 async function runSearch(){
-  const raw = document.getElementById('srch-input').value.trim();
-  if(!raw) return;
+  const input = document.getElementById('srch-input');
+  const raw = input.value.trim();
+  if(!raw){
+    input.focus();
+    input.style.outline='2px solid var(--amber)';
+    input.placeholder='Type a city, ZIP, address, or MLS# first…';
+    setTimeout(()=>{ input.style.outline='none'; },1500);
+    return;
+  }
   const typeFilter = document.getElementById('sf-type').value;
   const priceFilter = parseInt(document.getElementById('sf-price').value)||0;
   const bedsFilter = parseInt(document.getElementById('sf-beds').value)||0;
