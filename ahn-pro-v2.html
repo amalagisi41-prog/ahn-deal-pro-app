@@ -594,43 +594,6 @@ input[type=hidden]{display:none}
     </div>
   </div>
 
-  <!-- MORTGAGE CALCULATOR (Phase 7) -->
-  <div id="mortgage-section" style="display:block;background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:14px;margin-bottom:12px">
-    <div style="font-weight:700;font-size:0.85rem;color:var(--off);margin-bottom:12px;letter-spacing:0.03em">MORTGAGE CALCULATOR</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-      <div>
-        <div style="font-size:0.65rem;color:var(--muted);font-weight:600;margin-bottom:4px">LOAN AMOUNT</div>
-        <input type="number" id="mc-loan" value="487500" style="width:100%;padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:0.8rem" oninput="calcMortgage()">
-      </div>
-      <div>
-        <div style="font-size:0.65rem;color:var(--muted);font-weight:600;margin-bottom:4px">INTEREST RATE (%)</div>
-        <input type="number" id="mc-rate" value="7.25" step="0.25" style="width:100%;padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:0.8rem" oninput="calcMortgage()">
-      </div>
-      <div>
-        <div style="font-size:0.65rem;color:var(--muted);font-weight:600;margin-bottom:4px">LOAN TERM (YEARS)</div>
-        <input type="number" id="mc-term" value="30" style="width:100%;padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:0.8rem" oninput="calcMortgage()">
-      </div>
-      <div>
-        <div style="font-size:0.65rem;color:var(--muted);font-weight:600;margin-bottom:4px">MONTHLY PAYMENT</div>
-        <div id="mc-payment" style="padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--teal);font-weight:700;font-size:0.9rem">—</div>
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:0.75rem">
-      <div style="background:rgba(46,207,173,0.08);border:1px solid rgba(46,207,173,0.15);border-radius:6px;padding:8px">
-        <div style="color:var(--muted);font-weight:600;margin-bottom:3px">TOTAL INTEREST</div>
-        <div id="mc-interest" style="color:var(--teal);font-weight:700;font-size:0.85rem">—</div>
-      </div>
-      <div style="background:rgba(46,207,173,0.08);border:1px solid rgba(46,207,173,0.15);border-radius:6px;padding:8px">
-        <div style="color:var(--muted);font-weight:600;margin-bottom:3px">TOTAL PAID</div>
-        <div id="mc-total" style="color:var(--teal);font-weight:700;font-size:0.85rem">—</div>
-      </div>
-      <div style="background:rgba(46,207,173,0.08);border:1px solid rgba(46,207,173,0.15);border-radius:6px;padding:8px">
-        <div style="color:var(--muted);font-weight:600;margin-bottom:3px">PRINCIPAL + INT</div>
-        <div id="mc-ratio" style="color:var(--teal);font-weight:700;font-size:0.85rem">—</div>
-      </div>
-    </div>
-  </div>
-
   <!-- COMPARABLE SALES (Phase 5) -->
   <div id="comps-section" style="display:none">
     <div style="margin-bottom:12px">
@@ -2406,7 +2369,7 @@ Requirements: use realistic CT street names and ZIP codes. Include accurate lat/
     }
     const resp = await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`},
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body: JSON.stringify({
         model:'claude-sonnet-4-6',
         max_tokens: parseMode==='single' ? 1200 : 2400,
@@ -3091,8 +3054,9 @@ function loadIntoAnalyzer(idx){
   // Initialize mortgage calculator (Phase 7)
   const downPayment = Math.round(l.price * 0.25);
   const loanAmount = l.price - downPayment;
-  const mcLoan=document.getElementById('mc-loan');if(mcLoan)mcLoan.value=loanAmount;
-  const ms=document.getElementById('mortgage-section');if(ms)ms.style.display='block';
+  // Pre-fill mortgage tab with property values
+  const mcPrice=document.getElementById('mc-home-price');if(mcPrice)mcPrice.value=l.price;
+  const mcDown=document.getElementById('mc-down-pct');if(mcDown)mcDown.value=25;
   calcMortgage();
   cLTL();
   // Load comparable properties (Phase 5) and photos (Phase 6)
@@ -3228,12 +3192,12 @@ function exportPortfolioAsCSV(){
 
 function getFallbackListings(query){
   return [
-    {address:'142 Birchwood Dr',city:query+' 06902',price:489000,beds:3,baths:2,sqft:1380,type:'Single Family',yearBuilt:1965,estimatedRent:3100,propertyTax:7200,hoa:0,daysOnMarket:8,status:'Active',highlights:'Updated kitchen, hardwood floors, 2-car garage'},
-    {address:'78 Maple Terrace',city:query+' 06905',price:625000,beds:4,baths:2.5,sqft:1820,type:'Single Family',yearBuilt:1978,estimatedRent:3900,propertyTax:9400,hoa:0,daysOnMarket:14,status:'Active',highlights:'Large yard, finished basement, near train'},
-    {address:'319 Commerce St, Unit 2',city:query+' 06901',price:349000,beds:2,baths:1,sqft:980,type:'Condo',yearBuilt:1999,estimatedRent:2400,propertyTax:4800,hoa:380,daysOnMarket:3,status:'Active',highlights:'Low maintenance, in-unit laundry, elevator building'},
-    {address:'55 Harbor View Rd',city:query+' 06902',price:875000,beds:4,baths:3,sqft:2640,type:'Single Family',yearBuilt:1988,estimatedRent:5200,propertyTax:13200,hoa:0,daysOnMarket:21,status:'Active',highlights:'Water views, renovated throughout, large deck'},
-    {address:'204-206 Grove Ave',city:query+' 06906',price:720000,beds:6,baths:3,sqft:2900,type:'Multi-Unit',yearBuilt:1955,estimatedRent:5400,propertyTax:10800,hoa:0,daysOnMarket:18,status:'Active',highlights:'2-unit, separate utilities, long-term tenants in place'},
-    {address:'31 Prospect Hill Ln',city:query+' 06903',price:415000,beds:3,baths:1.5,sqft:1260,type:'Single Family',yearBuilt:1957,estimatedRent:2800,propertyTax:6200,hoa:0,daysOnMarket:5,status:'Active',highlights:'Corner lot, detached studio, new roof 2022'},
+    {address:'142 Birchwood Dr',city:query+' 06902',price:489000,beds:3,baths:2,sqft:1380,type:'Single Family',yearBuilt:1965,estimatedRent:3100,propertyTax:7200,hoa:0,daysOnMarket:8,status:'Active',highlights:'Updated kitchen, hardwood floors, 2-car garage',assessedValue:421000,lastSalePrice:362000,lastSaleDate:'2021-03-14',lotSize:'0.22 acres',walkScore:62,schoolRating:7,neighborhood:'Quiet residential neighborhood near park',comparableSales:'3 similar sold $470–510k last 90 days',investmentNote:'Solid cash-flow play in established neighborhood; strong rental demand.'},
+    {address:'78 Maple Terrace',city:query+' 06905',price:625000,beds:4,baths:2.5,sqft:1820,type:'Single Family',yearBuilt:1978,estimatedRent:3900,propertyTax:9400,hoa:0,daysOnMarket:14,status:'Active',highlights:'Large yard, finished basement, near train',assessedValue:544000,lastSalePrice:498000,lastSaleDate:'2020-07-22',lotSize:'0.35 acres',walkScore:74,schoolRating:8,neighborhood:'Tree-lined street, walkable to commuter rail',comparableSales:'4 comps sold $595–650k past 6 months',investmentNote:'Premium location near transit boosts long-term appreciation.'},
+    {address:'319 Commerce St, Unit 2',city:query+' 06901',price:349000,beds:2,baths:1,sqft:980,type:'Condo',yearBuilt:1999,estimatedRent:2400,propertyTax:4800,hoa:380,daysOnMarket:3,status:'Active',highlights:'Low maintenance, in-unit laundry, elevator building',assessedValue:298000,lastSalePrice:275000,lastSaleDate:'2019-11-05',lotSize:'N/A',walkScore:88,schoolRating:6,neighborhood:'Downtown core, walkable to shops and dining',comparableSales:'2 similar units sold $330–360k this quarter',investmentNote:'High walkability supports strong rental pool; watch HOA.'},
+    {address:'55 Harbor View Rd',city:query+' 06902',price:875000,beds:4,baths:3,sqft:2640,type:'Single Family',yearBuilt:1988,estimatedRent:5200,propertyTax:13200,hoa:0,daysOnMarket:21,status:'Active',highlights:'Water views, renovated throughout, large deck',assessedValue:762000,lastSalePrice:710000,lastSaleDate:'2018-06-30',lotSize:'0.48 acres',walkScore:55,schoolRating:9,neighborhood:'Waterfront community, highly sought-after area',comparableSales:'2 waterfront comps sold $840–920k past year',investmentNote:'Trophy asset; appreciation upside outweighs modest cap rate.'},
+    {address:'204-206 Grove Ave',city:query+' 06906',price:720000,beds:6,baths:3,sqft:2900,type:'Multi-Unit',yearBuilt:1955,estimatedRent:5400,propertyTax:10800,hoa:0,daysOnMarket:18,status:'Active',highlights:'2-unit, separate utilities, long-term tenants in place',assessedValue:634000,lastSalePrice:580000,lastSaleDate:'2020-02-11',lotSize:'0.18 acres',walkScore:71,schoolRating:6,neighborhood:'Mixed residential/commercial corridor',comparableSales:'Multi-units transacting at $240–260/sqft in area',investmentNote:'Best cash-flow option; in-place tenants reduce vacancy risk.'},
+    {address:'31 Prospect Hill Ln',city:query+' 06903',price:415000,beds:3,baths:1.5,sqft:1260,type:'Single Family',yearBuilt:1957,estimatedRent:2800,propertyTax:6200,hoa:0,daysOnMarket:5,status:'Active',highlights:'Corner lot, detached studio, new roof 2022',assessedValue:358000,lastSalePrice:302000,lastSaleDate:'2017-09-18',lotSize:'0.29 acres',walkScore:58,schoolRating:7,neighborhood:'Established suburban neighborhood, good schools',comparableSales:'5 comps sold $395–440k past 90 days',investmentNote:'Value-add studio adds rental income; solid fundamentals.'},
   ];
 }
 
