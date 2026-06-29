@@ -3210,90 +3210,107 @@ function renderListingCard(l, idx){
   const capCls = l.cap>=6?'t':l.cap>=4?'a':'r';
   const cfCls = l.mcf>=300?'t':l.mcf>=0?'a':'r';
   const noteData = savedProps[l.address];
-  const mlsBadge = l.mlsNumber ? `<span style="position:absolute;bottom:10px;left:10px;background:rgba(15,31,56,0.85);color:var(--teal);font-size:.6rem;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.04em">MLS# ${l.mlsNumber}</span>` : '';
-  const extraInfo = (l.investmentNote || l.neighborhood || l.comparableSales) ? `
-    <div style="background:rgba(46,207,173,0.07);border:1px solid rgba(46,207,173,0.15);border-radius:8px;padding:10px 12px;margin-bottom:10px">
-      ${l.investmentNote ? `<div style="font-size:.71rem;color:var(--off);line-height:1.5;margin-bottom:${l.neighborhood?'7px':'0'}">${l.investmentNote}</div>` : ''}
-      ${l.neighborhood ? `<div style="font-size:.65rem;color:var(--muted)">📍 ${l.neighborhood}</div>` : ''}
-      ${l.comparableSales ? `<div style="font-size:.65rem;color:var(--muted);margin-top:3px">📊 ${l.comparableSales}</div>` : ''}
-      ${l.rentComps ? `<div style="font-size:.65rem;color:var(--muted);margin-top:3px">🏠 ${l.rentComps}</div>` : ''}
-      ${l.schoolDistrict ? `<div style="font-size:.65rem;color:var(--muted);margin-top:3px">🎓 ${l.schoolDistrict}</div>` : ''}
-    </div>` : '';
-  // Property photo: Google Street View > OSM static map (lat/lng) > styled placeholder
-  const gKey = document.getElementById('set-google-key')?.value?.trim();
-  const addrEnc = encodeURIComponent((l.address||'')+', '+(l.city||''));
   const typeIcon = l.type==='Multi-Unit'?'🏢':l.type==='Condo'?'🏙️':l.type==='Townhouse'?'🏘️':'🏠';
+
+  // Photo/map header
+  const gKey = (document.getElementById('set-google-key')?.value||'').trim();
+  const addrEnc = encodeURIComponent((l.address||'')+', '+(l.city||''));
   let photoHtml;
   if(gKey){
-    photoHtml = `<img src="https://maps.googleapis.com/maps/api/streetview?size=600x300&location=${addrEnc}&key=${gKey}&source=outdoor"
-         style="width:100%;height:160px;object-fit:cover;display:block"
-         onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
-         alt="Street view">
-       <div class="lc-photo-placeholder" style="display:none">${typeIcon}</div>`;
+    photoHtml = `<img src="https://maps.googleapis.com/maps/api/streetview?size=600x280&location=${addrEnc}&key=${gKey}&source=outdoor" style="width:100%;height:145px;object-fit:cover;display:block" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="Street view"><div style="display:none;width:100%;height:145px;background:#1a2744;align-items:center;justify-content:center;font-size:2.2rem">${typeIcon}</div>`;
   } else if(l.lat && l.lng){
     const osmUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${l.lat},${l.lng}&zoom=17&size=600x200&markers=${l.lat},${l.lng},red-pushpin`;
-    photoHtml = `<img src="${osmUrl}" style="width:100%;height:160px;object-fit:cover;display:block;background:var(--card2)"
-         onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="Map">
-       <div class="lc-photo-placeholder" style="display:none">${typeIcon}</div>`;
+    photoHtml = `<img src="${osmUrl}" style="width:100%;height:145px;object-fit:cover;display:block;background:#1a2744" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="Map"><div style="display:none;width:100%;height:145px;background:#1a2744;align-items:center;justify-content:center;font-size:2.2rem">${typeIcon}</div>`;
   } else {
-    const colors = ['#1a2744','#162039','#1c2d50'];
-    const bg = colors[idx % colors.length];
-    photoHtml = `<div style="width:100%;height:160px;background:linear-gradient(135deg,${bg} 0%,#0f1f38 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px">
-      <div style="font-size:2.4rem">${typeIcon}</div>
-      <div style="font-size:0.62rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.3)">${l.type||'Residential'}</div>
-    </div>`;
+    photoHtml = `<div style="width:100%;height:145px;background:linear-gradient(135deg,#1a2744 0%,#0f1f38 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px"><div style="font-size:2.2rem">${typeIcon}</div><div style="font-size:0.58rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.28)">${l.type||'Residential'}</div></div>`;
   }
 
+  // Full public record rows
+  const pubRows = [
+    l.assessedValue  && ['Assessed Value',  `$${l.assessedValue.toLocaleString()}`],
+    l.lastSalePrice  && ['Last Sale Price',  `$${l.lastSalePrice.toLocaleString()}`],
+    l.lastSaleDate   && ['Sale Date',        l.lastSaleDate],
+    l.daysOnMarket   && ['Days on Market',   `${l.daysOnMarket} days`],
+    l.yearBuilt      && ['Year Built',       l.yearBuilt],
+    l.sqft           && ['Living Area',      `${l.sqft.toLocaleString()} sqft`],
+    l.lotSize        && ['Lot Size',         l.lotSize],
+    l.walkScore      && ['Walk Score',       `${l.walkScore}/100`],
+    l.schoolRating   && ['School Rating',    `${l.schoolRating}/10`],
+    l.hoa            && ['HOA Fee',          `$${l.hoa}/mo`],
+    l.nearbyAmenities&& ['Nearby',           l.nearbyAmenities],
+  ].filter(Boolean);
+
+  const miniMapHtml = (l.lat && l.lng)
+    ? `<div id="lc-map-${idx}" style="width:100%;height:160px;border-radius:8px;overflow:hidden;margin-bottom:12px;background:#1a2744"></div>`
+    : '';
+
   return `
-<div class="listing-card" id="lc-${idx}">
-  <div style="position:relative">
-    ${photoHtml}
-    <span class="lc-badge ${badgeCls}" style="position:absolute;top:10px;left:10px">${badgeTxt}</span>
-    <span style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.65);color:white;font-size:.6rem;font-weight:700;padding:3px 8px;border-radius:20px">${l.status}${l.daysOnMarket?` · ${l.daysOnMarket}d`:''}</span>
-    ${mlsBadge}
-  </div>
-  <div class="lc-body">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px">
-      <div class="lc-price">${$f(l.price)}</div>
-      ${l.mlsNumber?`<span style="font-size:.62rem;font-weight:700;color:var(--amber);background:rgba(240,180,41,0.12);padding:3px 9px;border-radius:20px;letter-spacing:.04em">MLS# ${l.mlsNumber}</span>`:''}
+<div class="listing-card" id="lc-${idx}" data-addr="${(l.address||'').replace(/"/g,'&quot;')}">
+  <!-- Tappable summary header -->
+  <div onclick="toggleCardExpand(${idx})" style="cursor:pointer;-webkit-tap-highlight-color:transparent">
+    <div style="position:relative">
+      ${photoHtml}
+      <span class="lc-badge ${badgeCls}" style="position:absolute;top:10px;left:10px">${badgeTxt}</span>
+      <span style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.65);color:#fff;font-size:.6rem;font-weight:700;padding:3px 8px;border-radius:20px">${l.status||'Active'}${l.daysOnMarket?` · ${l.daysOnMarket}d`:''}</span>
+      ${l.mlsNumber?`<span style="position:absolute;bottom:8px;left:10px;background:rgba(15,31,56,0.85);color:var(--teal);font-size:.6rem;font-weight:700;padding:3px 9px;border-radius:20px">MLS# ${l.mlsNumber}</span>`:''}
     </div>
-    <div class="lc-addr">${l.address}, ${l.city}</div>
-    <div class="lc-specs">
-      <span class="lc-spec">${l.beds} bd</span>
-      <span class="lc-spec">${l.baths} ba</span>
-      ${l.sqft?`<span class="lc-spec">${l.sqft.toLocaleString()} sqft</span>`:''}
-      <span class="lc-spec">${l.type||'Residential'}</span>
-      ${l.yearBuilt?`<span class="lc-spec">Built ${l.yearBuilt}</span>`:''}
-    </div>
-    <div class="lc-metrics">
-      <div class="lc-metric"><div class="lc-mval ${capCls}">${l.cap.toFixed(1)}%</div><div class="lc-mlbl">CAP</div></div>
-      <div class="lc-metric"><div class="lc-mval ${l.coc>=8?'t':l.coc>=4?'a':'r'}">${l.coc.toFixed(1)}%</div><div class="lc-mlbl">CoC</div></div>
-      <div class="lc-metric"><div class="lc-mval ${cfCls}">${$f(l.mcf)}</div><div class="lc-mlbl">CF/mo</div></div>
-      <div class="lc-metric"><div class="lc-mval">${(l.price/(l.estimatedRent*12)).toFixed(1)}x</div><div class="lc-mlbl">GRM</div></div>
-    </div>
-    ${l.highlights?`<div style="font-size:.7rem;color:var(--muted);margin-bottom:10px;line-height:1.5">${l.highlights}</div>`:''}
-    ${extraInfo}
-    <div style="font-size:.67rem;color:var(--muted2);margin-bottom:10px">Est. rent: <strong style="color:var(--off)">${$f(l.estimatedRent)}/mo</strong> · Tax: <strong style="color:var(--off)">${$f(l.propertyTax)}/yr</strong>${l.hoa?` · HOA: <strong style="color:var(--off)">${$f(l.hoa)}/mo</strong>`:''}</div>
-    <!-- Public Records Facts -->
-    <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:9px 11px;margin-bottom:10px;font-size:0.67rem">
-      <div style="font-size:0.58rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--teal);margin-bottom:7px">PUBLIC RECORD DATA</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px 12px">
-        ${l.assessedValue?`<div><span style="color:var(--muted)">Assessed:</span> <strong style="color:var(--off)">$${l.assessedValue.toLocaleString()}</strong></div>`:''}
-        ${l.lastSalePrice?`<div><span style="color:var(--muted)">Last Sale:</span> <strong style="color:var(--off)">$${l.lastSalePrice.toLocaleString()}</strong></div>`:''}
-        ${l.lastSaleDate?`<div><span style="color:var(--muted)">Sale Date:</span> <strong style="color:var(--off)">${l.lastSaleDate}</strong></div>`:''}
-        ${l.daysOnMarket?`<div><span style="color:var(--muted)">DOM:</span> <strong style="color:var(--off)">${l.daysOnMarket} days</strong></div>`:''}
-        ${l.yearBuilt?`<div><span style="color:var(--muted)">Year Built:</span> <strong style="color:var(--off)">${l.yearBuilt}</strong></div>`:''}
-        ${l.lotSize?`<div><span style="color:var(--muted)">Lot:</span> <strong style="color:var(--off)">${l.lotSize}</strong></div>`:''}
-        ${l.walkScore?`<div><span style="color:var(--muted)">Walk Score:</span> <strong style="color:var(--off)">${l.walkScore}/100</strong></div>`:''}
-        ${l.schoolRating?`<div><span style="color:var(--muted)">Schools:</span> <strong style="color:var(--off)">${l.schoolRating}/10</strong></div>`:''}
+    <div style="padding:12px 14px 8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+        <div class="lc-price">${$f(l.price)}</div>
+        <div style="font-size:0.62rem;color:var(--muted)" id="lc-chevron-${idx}">Details ▾</div>
+      </div>
+      <div class="lc-addr">${l.address}, ${l.city}</div>
+      <div class="lc-specs">
+        <span class="lc-spec">${l.beds||'—'} bd</span>
+        <span class="lc-spec">${l.baths||'—'} ba</span>
+        ${l.sqft?`<span class="lc-spec">${l.sqft.toLocaleString()} sqft</span>`:''}
+        <span class="lc-spec">${l.type||'Residential'}</span>
+        ${l.yearBuilt?`<span class="lc-spec">Built ${l.yearBuilt}</span>`:''}
+      </div>
+      <div class="lc-metrics">
+        <div class="lc-metric"><div class="lc-mval ${capCls}">${l.cap.toFixed(1)}%</div><div class="lc-mlbl">CAP</div></div>
+        <div class="lc-metric"><div class="lc-mval ${l.coc>=8?'t':l.coc>=4?'a':'r'}">${l.coc.toFixed(1)}%</div><div class="lc-mlbl">CoC</div></div>
+        <div class="lc-metric"><div class="lc-mval ${cfCls}">${$f(l.mcf)}</div><div class="lc-mlbl">CF/mo</div></div>
+        <div class="lc-metric"><div class="lc-mval">${l.estimatedRent?((l.price/(l.estimatedRent*12)).toFixed(1)):'—'}x</div><div class="lc-mlbl">GRM</div></div>
       </div>
     </div>
-    <div class="lc-actions">
-      <button class="lc-btn primary" onclick="loadIntoAnalyzer(${idx})">Analyze → </button>
-      <button class="lc-btn ${isSaved?'saved':''}" id="save-btn-${idx}" onclick="toggleSave(${idx})" style="${isSaved?'':'background:rgba(46,207,173,0.15);border-color:var(--teal);color:var(--teal);font-weight:700;'}">${isSaved?'★ Saved':'☆ Save'}</button>
-      <button class="lc-btn" onclick="toggleNotes(${idx})">Notes</button>
+  </div>
+
+  <!-- Expanded details panel -->
+  <div id="lc-expand-${idx}" style="display:none;padding:0 14px 6px">
+    ${miniMapHtml}
+    <!-- Income / expense summary -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:12px">
+      <div style="background:rgba(46,207,173,0.08);border:1px solid rgba(46,207,173,0.2);border-radius:8px;padding:9px 6px;text-align:center">
+        <div style="font-size:0.76rem;font-weight:800;color:var(--teal)">${$f(l.estimatedRent)}</div>
+        <div style="font-size:0.58rem;color:var(--muted);margin-top:2px;letter-spacing:.05em">RENT/MO</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:9px 6px;text-align:center">
+        <div style="font-size:0.76rem;font-weight:800;color:var(--off)">${$f(Math.round((l.propertyTax||0)/12))}</div>
+        <div style="font-size:0.58rem;color:var(--muted);margin-top:2px;letter-spacing:.05em">TAX/MO</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:9px 6px;text-align:center">
+        <div style="font-size:0.76rem;font-weight:800;color:${(l.noi||0)>0?'var(--teal)':'var(--red)'}">${$f(Math.round((l.noi||0)/12))}</div>
+        <div style="font-size:0.58rem;color:var(--muted);margin-top:2px;letter-spacing:.05em">NOI/MO</div>
+      </div>
     </div>
-    <div class="note-panel ${noteData?'open':''}" id="note-panel-${idx}">
+    ${l.highlights?`<div style="font-size:.71rem;color:var(--off);line-height:1.55;margin-bottom:10px;padding:10px 12px;background:rgba(255,255,255,0.04);border-radius:8px">${l.highlights}</div>`:''}
+    ${pubRows.length?`
+    <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px">
+      <div style="font-size:0.58rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--teal);margin-bottom:8px">📋 PUBLIC RECORD DATA</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 10px">
+        ${pubRows.map(([lbl,val])=>`<div style="font-size:0.67rem"><span style="color:var(--muted)">${lbl}:</span> <strong style="color:var(--off)">${val}</strong></div>`).join('')}
+      </div>
+    </div>` : ''}
+    ${(l.investmentNote||l.neighborhood||l.comparableSales)?`
+    <div style="background:rgba(46,207,173,0.06);border:1px solid rgba(46,207,173,0.15);border-radius:8px;padding:10px 12px;margin-bottom:10px">
+      ${l.investmentNote?`<div style="font-size:.71rem;color:var(--off);line-height:1.5;margin-bottom:5px">💡 ${l.investmentNote}</div>`:''}
+      ${l.neighborhood?`<div style="font-size:.65rem;color:var(--muted);margin-bottom:3px">📍 ${l.neighborhood}</div>`:''}
+      ${l.comparableSales?`<div style="font-size:.65rem;color:var(--muted);margin-bottom:3px">📊 Comps: ${l.comparableSales}</div>`:''}
+      ${l.rentComps?`<div style="font-size:.65rem;color:var(--muted)">🏠 Rent: ${l.rentComps}</div>`:''}
+    </div>` : ''}
+    <!-- Notes panel (inside expand) -->
+    <div id="note-panel-${idx}" style="display:none;margin-bottom:8px">
       <div style="font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:8px">Notes &amp; Tags</div>
       <div class="tag-row">
         <button class="tag-chip ${noteData?.tags?.includes('Follow Up')?'on':''}" onclick="toggleTag(${idx},'Follow Up',this)">Follow Up</button>
@@ -3302,49 +3319,111 @@ function renderListingCard(l, idx){
         <button class="tag-chip ${noteData?.tags?.includes('Needs Work')?'follow':''}" onclick="toggleTag(${idx},'Needs Work',this)">Needs Work</button>
         <button class="tag-chip ${noteData?.tags?.includes('Under Negotiation')?'on':''}" onclick="toggleTag(${idx},'Under Negotiation',this)">Negotiating</button>
       </div>
-      <textarea class="note-textarea" id="note-text-${idx}" placeholder="Notes, observations, client feedback, offer strategy…">${noteData?.note||''}</textarea>
-      <div class="photo-upload-row">
-        <input type="file" id="photo-upload-${idx}" accept="image/*" multiple style="display:none" onchange="handlePhotoUpload(${idx},this)">
-        <button class="photo-upload-btn" onclick="document.getElementById('photo-upload-${idx}').click()">+ Photos</button>
-        <div class="photo-thumbs" id="photo-thumbs-${idx}">${(noteData?.photos||[]).map(p=>`<img class="photo-thumb" src="${p}" alt="">`).join('')}</div>
-      </div>
+      <textarea class="note-textarea" id="note-text-${idx}" placeholder="Notes, observations, offer strategy…">${noteData?.note||''}</textarea>
       <button class="note-save-btn" onclick="saveNote(${idx})">Save Note</button>
     </div>
+  </div>
+
+  <!-- Action buttons — always visible -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 14px 14px">
+    <button onclick="event.stopPropagation();lcAnalyze(${idx})" style="padding:11px 6px;background:var(--teal);border:none;border-radius:8px;font-family:inherit;font-size:0.73rem;font-weight:800;color:var(--navy);cursor:pointer;-webkit-tap-highlight-color:transparent">Analyze →</button>
+    <button id="save-btn-${idx}" onclick="event.stopPropagation();lcToggleSave(${idx})" style="padding:11px 6px;background:${isSaved?'rgba(46,207,173,0.2)':'rgba(46,207,173,0.1)'};border:1.5px solid var(--teal);border-radius:8px;font-family:inherit;font-size:0.73rem;font-weight:800;color:var(--teal);cursor:pointer;-webkit-tap-highlight-color:transparent">${isSaved?'★ Saved':'☆ Save'}</button>
+    <button onclick="event.stopPropagation();lcToggleNotes(${idx})" style="padding:11px 6px;background:none;border:1.5px solid var(--border2);border-radius:8px;font-family:inherit;font-size:0.73rem;font-weight:700;color:var(--muted);cursor:pointer;-webkit-tap-highlight-color:transparent">📝 Notes</button>
   </div>
 </div>`;
 }
 
-function loadIntoAnalyzer(idx){
-  const l = searchResults[idx];
-  if(!l) return;
-  // Pre-fill analyzer
-  document.getElementById('l-price').value = l.price;
-  document.getElementById('l-down').value = Math.round(l.price*0.25);
-  document.getElementById('l-rent').value = l.estimatedRent;
-  document.getElementById('l-tax').value = l.propertyTax||Math.round(l.price*0.016);
-  // Update sliders
-  const sp=document.getElementById('ls-price');if(sp){sp.value=l.price;pF(sp);document.getElementById('lv-price').textContent='$'+l.price.toLocaleString();}
-  const sd=document.getElementById('ls-dpct');if(sd){sd.value=25;pF(sd);document.getElementById('lv-down').textContent='25% · '+$f(Math.round(l.price*0.25));}
-  const sr=document.getElementById('ls-rent');if(sr){sr.value=l.estimatedRent;pF(sr);document.getElementById('lv-rent').textContent='$'+l.estimatedRent.toLocaleString();}
-  // Set address for presentation
-  document.getElementById('pres-addr').value = l.address+', '+l.city;
-  // Initialize mortgage calculator (Phase 7)
-  const downPayment = Math.round(l.price * 0.25);
-  const loanAmount = l.price - downPayment;
-  // Pre-fill mortgage tab with property values
-  const mcPrice=document.getElementById('mc-home-price');if(mcPrice)mcPrice.value=l.price;
-  const mcDown=document.getElementById('mc-down-pct');if(mcDown)mcDown.value=25;
-  calcMortgage();
-  cLTL();
-  // Auto-open manual analyzer panel
-  const panel=document.getElementById('manual-analyzer-panel');
-  if(panel&&panel.style.display==='none') toggleManualAnalyzer();
-  // Load comparable properties (Phase 5) and photos (Phase 6)
-  displayCompsForProperty(l);
-  displayPhotosForProperty(l);
-  goTab('analyze');
-  setTimeout(()=>{ panel?.scrollIntoView({behavior:'smooth',block:'start'}); },200);
+/* ── Card expand / collapse ── */
+function toggleCardExpand(idx){
+  const panel = document.getElementById('lc-expand-'+idx);
+  const chev  = document.getElementById('lc-chevron-'+idx);
+  if(!panel) return;
+  const open = panel.style.display === 'none';
+  panel.style.display = open ? 'block' : 'none';
+  if(chev) chev.textContent = open ? 'Close ▴' : 'Details ▾';
+  if(open){
+    const l = searchResults.find(p=>p.address === document.getElementById('lc-'+idx)?.dataset?.addr) || searchResults[idx];
+    if(l?.lat && l?.lng) initCardMap(idx, l.lat, l.lng);
+  }
 }
+
+function initCardMap(idx, lat, lng){
+  const container = document.getElementById('lc-map-'+idx);
+  if(!container || container._lcMapInit) return;
+  container._lcMapInit = true;
+  try{
+    const m = L.map(container,{zoomControl:false,attributionControl:false,dragging:false,scrollWheelZoom:false}).setView([lat,lng],16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(m);
+    const icon = L.divIcon({html:'<div style="background:#2ecfad;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 6px rgba(0,0,0,0.5)"></div>',iconSize:[18,18],className:''});
+    L.marker([lat,lng],{icon}).addTo(m);
+    setTimeout(()=>m.invalidateSize(),150);
+  }catch(e){ if(container) container.style.display='none'; }
+}
+
+/* ── Analyze button ── */
+function lcAnalyze(idx){
+  const card = document.getElementById('lc-'+idx);
+  const addr = card?.dataset?.addr;
+  const l = (addr ? searchResults.find(p=>p.address===addr) : null) || searchResults[idx];
+  if(!l){ console.warn('lcAnalyze: no listing at',idx); return; }
+  try{
+    const sv = (id,v)=>{ const el=document.getElementById(id); if(el) el.value=v; };
+    sv('l-price', l.price);
+    sv('l-down',  Math.round(l.price*0.25));
+    sv('l-rent',  l.estimatedRent);
+    sv('l-tax',   l.propertyTax||Math.round(l.price*0.016));
+    sv('pres-addr', (l.address||'')+', '+(l.city||''));
+    sv('mc-home-price', l.price);
+    sv('mc-down-pct',   25);
+    if(typeof calcMortgage==='function') try{calcMortgage();}catch(e){}
+    if(typeof cLTL==='function')         try{cLTL();}catch(e){}
+    const panel = document.getElementById('manual-analyzer-panel');
+    if(panel && panel.style.display==='none') toggleManualAnalyzer();
+    goTab('analyze');
+    setTimeout(()=>{ if(panel) panel.scrollIntoView({behavior:'smooth',block:'start'}); },300);
+  }catch(e){ console.error('lcAnalyze error:',e); }
+}
+
+/* ── Save button ── */
+function lcToggleSave(idx){
+  const card = document.getElementById('lc-'+idx);
+  const addr = card?.dataset?.addr;
+  const l = (addr ? searchResults.find(p=>p.address===addr) : null) || searchResults[idx];
+  if(!l) return;
+  const key = l.address;
+  if(savedProps[key]){
+    delete savedProps[key];
+  } else {
+    savedProps[key] = {
+      savedAt:new Date().toISOString(), price:l.price, beds:l.beds, baths:l.baths,
+      sqft:l.sqft, type:l.type, yearBuilt:l.yearBuilt, estimatedRent:l.estimatedRent,
+      propertyTax:l.propertyTax, hoa:l.hoa||0, city:l.city,
+      assessedValue:l.assessedValue||null, lastSalePrice:l.lastSalePrice||null,
+      lastSaleDate:l.lastSaleDate||null, lotSize:l.lotSize||null,
+      walkScore:l.walkScore||null, schoolRating:l.schoolRating||null,
+      neighborhood:l.neighborhood||null, comparableSales:l.comparableSales||null,
+      investmentNote:l.investmentNote||null, lat:l.lat||null, lng:l.lng||null,
+      analysis:{cap:l.cap,coc:l.coc,mcf:l.mcf,noi:l.noi}, note:'', tags:[], photos:[]
+    };
+  }
+  localStorage.setItem('ahn_saved', JSON.stringify(savedProps));
+  const saved = !!savedProps[key];
+  const btn = document.getElementById('save-btn-'+idx);
+  if(btn){
+    btn.textContent = saved ? '★ Saved' : '☆ Save';
+    btn.style.background = saved ? 'rgba(46,207,173,0.2)' : 'rgba(46,207,173,0.1)';
+  }
+}
+
+/* ── Notes toggle ── */
+function lcToggleNotes(idx){
+  const expand = document.getElementById('lc-expand-'+idx);
+  if(expand && expand.style.display==='none') toggleCardExpand(idx);
+  const panel = document.getElementById('note-panel-'+idx);
+  if(panel) panel.style.display = panel.style.display==='none' ? 'block' : 'none';
+}
+
+function loadIntoAnalyzer(idx){ lcAnalyze(idx); }
 
 function toggleSave(idx){
   const l = searchResults[idx];
@@ -3395,10 +3474,8 @@ function toggleSave(idx){
   if(btn){ btn.className='lc-btn '+(savedProps[key]?'saved':''); btn.textContent=savedProps[key]?'★ Saved':'☆ Save'; }
 }
 
-function toggleNotes(idx){
-  const panel = document.getElementById('note-panel-'+idx);
-  if(panel) panel.classList.toggle('open');
-}
+function toggleNotes(idx){ lcToggleNotes(idx); }
+function toggleSave(idx){ lcToggleSave(idx); }
 
 function toggleTag(idx, tag, el){
   const l = searchResults[idx];
