@@ -105,6 +105,14 @@ body{font-family:"Inter",-apple-system,sans-serif;background:var(--navy);color:v
 .comp-meta-lbl{font-size:0.62rem;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:0.02em;margin-bottom:2px}
 .comp-meta-val{font-size:0.82rem;color:var(--white);font-weight:600}
 
+/* ── PHOTO GALLERY ── */
+.photo-gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}
+.photo-card{background:var(--card2);border:1px solid var(--border);border-radius:var(--r2);padding:12px;cursor:pointer;transition:all 0.2s}
+.photo-card:hover{border-color:var(--teal);background:var(--card3)}
+.photo-placeholder{background:linear-gradient(135deg,var(--card3),var(--card2));border-radius:8px;padding:20px;text-align:center;font-size:2rem;margin-bottom:8px}
+.photo-title{font-weight:600;font-size:0.8rem;color:var(--off);margin-bottom:6px}
+.photo-desc{font-size:0.68rem;color:var(--muted);line-height:1.4}
+
 /* ── KPI ROW ── */
 .krow{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px}
 .krow.c3{grid-template-columns:repeat(3,1fr)}
@@ -576,6 +584,51 @@ input[type=hidden]{display:none}
     </div>
     <div class="v-div"></div>
     <div class="v-detail" id="v-detail">Enter your numbers to see the deal analysis.</div>
+  </div>
+
+  <!-- PROPERTY PHOTOS (Phase 6) -->
+  <div id="photos-section" style="display:none">
+    <div style="margin-bottom:12px">
+      <div style="font-weight:700;font-size:0.85rem;color:var(--off);margin-bottom:10px;letter-spacing:0.03em">PROPERTY PHOTOS</div>
+      <div id="photos-gallery" class="photo-gallery"></div>
+    </div>
+  </div>
+
+  <!-- MORTGAGE CALCULATOR (Phase 7) -->
+  <div id="mortgage-section" style="display:none;background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:14px;margin-bottom:12px">
+    <div style="font-weight:700;font-size:0.85rem;color:var(--off);margin-bottom:12px;letter-spacing:0.03em">MORTGAGE CALCULATOR</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div>
+        <div style="font-size:0.65rem;color:var(--muted);font-weight:600;margin-bottom:4px">LOAN AMOUNT</div>
+        <input type="number" id="mc-loan" value="487500" style="width:100%;padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:0.8rem" oninput="calcMortgage()">
+      </div>
+      <div>
+        <div style="font-size:0.65rem;color:var(--muted);font-weight:600;margin-bottom:4px">INTEREST RATE (%)</div>
+        <input type="number" id="mc-rate" value="7.25" step="0.25" style="width:100%;padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:0.8rem" oninput="calcMortgage()">
+      </div>
+      <div>
+        <div style="font-size:0.65rem;color:var(--muted);font-weight:600;margin-bottom:4px">LOAN TERM (YEARS)</div>
+        <input type="number" id="mc-term" value="30" style="width:100%;padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:0.8rem" oninput="calcMortgage()">
+      </div>
+      <div>
+        <div style="font-size:0.65rem;color:var(--muted);font-weight:600;margin-bottom:4px">MONTHLY PAYMENT</div>
+        <div id="mc-payment" style="padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:6px;color:var(--teal);font-weight:700;font-size:0.9rem">—</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:0.75rem">
+      <div style="background:rgba(46,207,173,0.08);border:1px solid rgba(46,207,173,0.15);border-radius:6px;padding:8px">
+        <div style="color:var(--muted);font-weight:600;margin-bottom:3px">TOTAL INTEREST</div>
+        <div id="mc-interest" style="color:var(--teal);font-weight:700;font-size:0.85rem">—</div>
+      </div>
+      <div style="background:rgba(46,207,173,0.08);border:1px solid rgba(46,207,173,0.15);border-radius:6px;padding:8px">
+        <div style="color:var(--muted);font-weight:600;margin-bottom:3px">TOTAL PAID</div>
+        <div id="mc-total" style="color:var(--teal);font-weight:700;font-size:0.85rem">—</div>
+      </div>
+      <div style="background:rgba(46,207,173,0.08);border:1px solid rgba(46,207,173,0.15);border-radius:6px;padding:8px">
+        <div style="color:var(--muted);font-weight:600;margin-bottom:3px">PRINCIPAL + INT</div>
+        <div id="mc-ratio" style="color:var(--teal);font-weight:700;font-size:0.85rem">—</div>
+      </div>
+    </div>
   </div>
 
   <!-- COMPARABLE SALES (Phase 5) -->
@@ -2450,6 +2503,73 @@ function backgroundEnrichProperties(listings){
 }
 
 /* ══════════════════════════════════════
+   PROPERTY PHOTOS (Phase 6)
+══════════════════════════════════════ */
+let photosCache = {};
+
+function generatePhotosPrompt(property){
+  return `Generate 4 realistic property photo descriptions for this ${property.type || 'residential'} property. Include diverse angles and areas.
+
+Property: ${property.address}, ${property.city}
+Type: ${property.type || 'Residential'}
+Built: ${property.yearBuilt || 'unknown'}
+Condition: Well-maintained investment property
+
+Return ONLY valid JSON array (no markdown):
+[
+  {
+    "title": "Front Exterior",
+    "description": "Photo description of what you see",
+    "emoji": "🏠"
+  }
+]
+
+Include 4 photos with titles: Front Exterior, Backyard/Patio, Kitchen, Master Bedroom. Use realistic descriptions for Connecticut residential properties.`;
+}
+
+async function generatePropertyPhotos(property){
+  const cacheKey = `${property.address}_${property.city}_photos`.toLowerCase();
+  if(photosCache[cacheKey] && Date.now() - photosCache[cacheKey].ts < 86400000){
+    return photosCache[cacheKey].data;
+  }
+
+  try{
+    const apiKey = document.getElementById('set-claude-key')?.value;
+    if(!apiKey) return [];
+
+    const prompt = generatePhotosPrompt(property);
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-1-20250805',
+        max_tokens: 600,
+        system: 'You are a real estate photographer AI. Return ONLY valid JSON (no markdown, no explanations).',
+        messages: [{role: 'user', content: prompt}]
+      })
+    });
+
+    if(!resp.ok) return [];
+    const data = await resp.json();
+    const text = data.content[0].text;
+
+    try{
+      const photos = JSON.parse(text);
+      const valid = Array.isArray(photos) ? photos.filter(p => p.title && p.description) : [];
+      photosCache[cacheKey] = {data: valid, ts: Date.now()};
+      return valid;
+    }catch{
+      return [];
+    }
+  }catch{
+    return [];
+  }
+}
+
+/* ══════════════════════════════════════
    COMPARABLE PROPERTIES (Phase 5)
 ══════════════════════════════════════ */
 let compsCache = {};
@@ -2520,6 +2640,69 @@ async function generateComparableProperties(property){
     }
   }catch{
     return [];
+  }
+}
+
+function renderPhotoCard(photo){
+  const emoji = photo.emoji || '📸';
+  return `
+    <div class="photo-card">
+      <div class="photo-placeholder">${emoji}</div>
+      <div class="photo-title">${photo.title}</div>
+      <div class="photo-desc">${photo.description}</div>
+    </div>
+  `;
+}
+
+function calcMortgage(){
+  const loan = parseFloat(document.getElementById('mc-loan').value) || 0;
+  const rate = parseFloat(document.getElementById('mc-rate').value) || 0;
+  const term = parseFloat(document.getElementById('mc-term').value) || 30;
+
+  if(loan <= 0 || rate < 0 || term <= 0) {
+    document.getElementById('mc-payment').textContent = '—';
+    document.getElementById('mc-interest').textContent = '—';
+    document.getElementById('mc-total').textContent = '—';
+    document.getElementById('mc-ratio').textContent = '—';
+    return;
+  }
+
+  const monthlyRate = rate / 100 / 12;
+  const numPayments = term * 12;
+
+  let monthlyPayment = 0;
+  if(monthlyRate === 0) {
+    monthlyPayment = loan / numPayments;
+  } else {
+    monthlyPayment = loan * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+  }
+
+  const totalPaid = monthlyPayment * numPayments;
+  const totalInterest = totalPaid - loan;
+  const principalIntRatio = ((monthlyPayment - (loan / numPayments)) / monthlyPayment * 100).toFixed(1);
+
+  document.getElementById('mc-payment').textContent = '$' + monthlyPayment.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  document.getElementById('mc-interest').textContent = '$' + totalInterest.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  document.getElementById('mc-total').textContent = '$' + totalPaid.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  document.getElementById('mc-ratio').textContent = principalIntRatio + '% int';
+}
+
+async function displayPhotosForProperty(property){
+  const photosSection = document.getElementById('photos-section');
+  const photosGallery = document.getElementById('photos-gallery');
+
+  if(!property.address || !property.city) {
+    photosSection.style.display = 'none';
+    return;
+  }
+
+  const photos = await generatePropertyPhotos(property);
+
+  if(photos.length > 0) {
+    photosGallery.innerHTML = photos.map(p => renderPhotoCard(p)).join('');
+    photosSection.style.display = 'block';
+  } else {
+    photosSection.style.display = 'none';
   }
 }
 
@@ -2669,9 +2852,18 @@ function loadIntoAnalyzer(idx){
   const sr=document.getElementById('ls-rent');if(sr){sr.value=l.estimatedRent;pF(sr);document.getElementById('lv-rent').textContent='$'+l.estimatedRent.toLocaleString();}
   // Set address for presentation
   document.getElementById('pres-addr').value = l.address+', '+l.city;
+  // Initialize mortgage calculator (Phase 7)
+  const downPayment = Math.round(l.price * 0.25);
+  const loanAmount = l.price - downPayment;
+  document.getElementById('mc-loan').value = loanAmount;
+  document.getElementById('mc-rate').value = '7.25';
+  document.getElementById('mc-term').value = '30';
+  document.getElementById('mortgage-section').style.display = 'block';
+  calcMortgage();
   cLTL();
-  // Load comparable properties (Phase 5)
+  // Load comparable properties (Phase 5) and photos (Phase 6)
   displayCompsForProperty(l);
+  displayPhotosForProperty(l);
   goTab('analyze');
 }
 
