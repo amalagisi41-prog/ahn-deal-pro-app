@@ -362,7 +362,20 @@ input[type=hidden]{display:none}
 .pres-navbtn:active,.pres-navbtn:hover{background:var(--teal);border-color:var(--teal);color:var(--navy)}
 .pres-counter{font-size:0.7rem;color:var(--muted);font-variant-numeric:tabular-nums}
 
+/* ── MAP STYLES (Phase 2) ── */
+#map-container{width:100%;height:400px;border-radius:var(--r);margin-bottom:12px;background:var(--card);border:1px solid var(--border2)}
+.leaflet-container{background:var(--navy)!important;font-family:inherit}
+.leaflet-control-attribution{background:rgba(15,31,56,0.7)!important;color:var(--muted)!important;font-size:0.6rem}
+.map-property-list{display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto}
+.map-property-card{background:var(--card);border:1px solid var(--border2);border-radius:var(--r2);padding:10px 12px;cursor:pointer;transition:all 0.15s}
+.map-property-card:hover{background:var(--card2);border-color:var(--teal)}
+.map-pc-price{font-size:0.88rem;font-weight:700;color:var(--teal);margin-bottom:3px}
+.map-pc-addr{font-size:0.74rem;color:var(--off);margin-bottom:4px}
+.map-pc-specs{font-size:0.65rem;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap}
+
 </style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 </head>
 <body>
 
@@ -834,16 +847,17 @@ input[type=hidden]{display:none}
   <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;margin-bottom:8px">
 
     <!-- Main search bar -->
-    <div style="padding:14px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+    <div style="padding:14px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;position:relative">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="var(--teal)" stroke-width="2"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="var(--teal)" stroke-width="2" stroke-linecap="round"/></svg>
       <input type="text" id="srch-input"
         placeholder="Address, city, ZIP, or MLS# …"
         style="flex:1;background:none;border:none;outline:none;font-family:inherit;font-size:0.88rem;font-weight:500;color:var(--white);min-width:0"
-        oninput="detectSearchMode()" onkeydown="if(event.key==='Enter')runSearch()">
+        oninput="detectSearchMode();fetchAddressSuggestions()" onkeydown="if(event.key==='Enter')runSearch();if(event.key==='Escape')closeAutocomplete()" autocomplete="off">
       <button onclick="runSearch()" id="srch-btn"
         style="background:var(--teal);border:none;border-radius:8px;padding:8px 15px;font-family:inherit;font-size:0.72rem;font-weight:800;color:var(--navy);cursor:pointer;letter-spacing:0.02em;flex-shrink:0;-webkit-tap-highlight-color:transparent">
         Analyze
       </button>
+      <div id="srch-autocomplete" style="position:absolute;top:100%;left:15px;right:15px;background:var(--card2);border:1px solid var(--border2);border-top:none;border-radius:0 0 8px 8px;max-height:220px;overflow-y:auto;display:none;z-index:100;margin-top:-1px"></div>
     </div>
 
     <!-- Search mode indicator -->
@@ -941,6 +955,28 @@ input[type=hidden]{display:none}
         <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--teal);margin-bottom:3px">Market search</div>
         <div style="font-size:0.76rem;color:var(--muted)">3-unit properties Norwalk CT under $800K</div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ MAP TAB (Phase 2) ══════════════════ -->
+<div id="tab-map" class="hidden">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+    <button onclick="initMapAndSearch()" style="padding:11px 15px;background:var(--teal);border:none;border-radius:var(--r2);font-family:inherit;font-size:0.78rem;font-weight:700;color:var(--navy);cursor:pointer;letter-spacing:-0.01em;-webkit-tap-highlight-color:transparent">🗺 Search on Map</button>
+    <button onclick="centerMapOnCT()" style="padding:11px 15px;background:var(--card2);border:1px solid var(--border2);border-radius:var(--r2);font-family:inherit;font-size:0.78rem;font-weight:700;color:var(--off);cursor:pointer;letter-spacing:-0.01em;-webkit-tap-highlight-color:transparent">📍 Center on CT</button>
+  </div>
+  <div id="map-container"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:12px">
+      <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--teal);margin-bottom:8px">Deal Quality</div>
+      <div style="display:flex;flex-direction:column;gap:6px;font-size:0.7rem">
+        <div style="display:flex;align-items:center;gap:6px"><div style="width:12px;height:12px;background:var(--green);border-radius:3px"></div><span>Strong Deal (CAP 6%+)</span></div>
+        <div style="display:flex;align-items:center;gap:6px"><div style="width:12px;height:12px;background:var(--amber);border-radius:3px"></div><span>Borderline (CAP 4-6%)</span></div>
+        <div style="display:flex;align-items:center;gap:6px"><div style="width:12px;height:12px;background:var(--red);border-radius:3px"></div><span>Review (CAP &lt;4%)</span></div>
+      </div>
+    </div>
+    <div id="map-info-panel" style="background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:12px;font-size:0.75rem;color:var(--muted);text-align:center">
+      Click map pins or search to view properties
     </div>
   </div>
 </div>
@@ -1113,6 +1149,10 @@ input[type=hidden]{display:none}
     <svg class="bti-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     <div class="bti-lbl">Search</div><div class="bti-bar"></div>
   </button>
+  <button class="bti" onclick="goTab('map')" id="bt-map">
+    <svg class="bti-icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+    <div class="bti-lbl">Map</div><div class="bti-bar"></div>
+  </button>
   <button class="bti" onclick="goTab('present')" id="bt-present">
     <svg class="bti-icon" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
     <div class="bti-lbl">Present</div><div class="bti-bar"></div>
@@ -1153,19 +1193,20 @@ function slDownPct(){const s=document.getElementById('ls-dpct');pF(s);const pv=p
 function stp(id,delta,mn,mx){const e=document.getElementById(id);if(!e)return;let v=parseFloat(e.value)+delta;e.value=Math.max(mn,Math.min(mx,parseFloat(v.toFixed(2))));}
 
 /* ── NAVIGATION ── */
-const TABS=['analyze','compare','strltr','portfolio','search','present','report','settings'];
+const TABS=['analyze','compare','strltr','portfolio','search','map','present','report','settings'];
 function goTab(t){
   TABS.forEach(x=>{
     document.getElementById('tab-'+x)?.classList.toggle('hidden',x!==t);
     const b=document.getElementById('bt-'+x);if(b)b.classList.toggle('on',x===t);
   });
-  const titles={analyze:'Analyze',compare:'Compare Deals',strltr:'STR vs LTR',portfolio:'Portfolio',search:'Property Search',present:'Present',report:'Deal Report',settings:'Settings'};
-  const subs={analyze:'Deal Analyzer Pro',compare:'Side-by-side scoring',strltr:'Same property, two strategies',portfolio:'Your properties',search:'AI-powered property finder',present:'Client presentation mode',report:'Branded client report',settings:'Platform configuration'};
+  const titles={analyze:'Analyze',compare:'Compare Deals',strltr:'STR vs LTR',portfolio:'Portfolio',search:'Property Search',map:'Map Search',present:'Present',report:'Deal Report',settings:'Settings'};
+  const subs={analyze:'Deal Analyzer Pro',compare:'Side-by-side scoring',strltr:'Same property, two strategies',portfolio:'Your properties',search:'AI-powered property finder',map:'Interactive property map',present:'Client presentation mode',report:'Branded client report',settings:'Platform configuration'};
   document.getElementById('page-title').textContent=titles[t]||t;
   document.getElementById('page-sub').textContent=subs[t]||'';
   document.getElementById('main-body').scrollTop=0;
   if(t==='compare')cCmp();
   if(t==='search'){initSearch();}
+  if(t==='map'){initMapTab();}
   if(t==='strltr')cSL();
   if(t==='portfolio')renderPortfolio();
   if(t==='settings')initSettings();
@@ -1805,6 +1846,74 @@ function detectSearchMode(){
 
 function quickSearch(q){ document.getElementById('srch-input').value=q; detectSearchMode(); runSearch(); }
 
+/* ── ADDRESS AUTOCOMPLETE (Phase 1) ── */
+let autocompleteCache = {};
+let autocompleteTimeout;
+let lastAutocompleteQuery = '';
+
+async function fetchAddressSuggestions(){
+  const input = document.getElementById('srch-input');
+  const q = input.value.trim();
+  const dropdown = document.getElementById('srch-autocomplete');
+
+  closeAutocomplete();
+  if(q.length < 3 || isMLS(q)) return;
+
+  if(lastAutocompleteQuery === q && autocompleteCache[q]) {
+    renderAutocompleteSuggestions(autocompleteCache[q]);
+    return;
+  }
+
+  clearTimeout(autocompleteTimeout);
+  autocompleteTimeout = setTimeout(async () => {
+    try {
+      const resp = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=7&countrycodes=us&addressdetails=1`);
+      if(!resp.ok) return;
+      const suggestions = await resp.json();
+      autocompleteCache[q] = suggestions;
+      lastAutocompleteQuery = q;
+      renderAutocompleteSuggestions(suggestions);
+    } catch(e) {
+      console.log('Autocomplete error:', e);
+    }
+  }, 300);
+}
+
+function renderAutocompleteSuggestions(suggestions){
+  const dropdown = document.getElementById('srch-autocomplete');
+  if(!suggestions || suggestions.length === 0) {
+    dropdown.style.display = 'none';
+    return;
+  }
+
+  dropdown.innerHTML = suggestions.map((s, i) => {
+    const displayName = s.address?.road ? `${s.address.road}` : s.name;
+    const city = s.address?.city || s.address?.town || '';
+    const state = s.address?.state || '';
+    const zip = s.address?.postcode || '';
+    const label = [displayName, city, state, zip].filter(x=>x).join(', ');
+
+    return `<div style="padding:10px 15px;border-bottom:1px solid var(--border);cursor:pointer;font-size:0.78rem;color:var(--off);transition:background 0.15s" onclick="selectAutocompleteSuggestion('${label.replace(/'/g, "\\'")}')">
+      <div style="font-weight:600;margin-bottom:2px">${displayName}</div>
+      <div style="font-size:0.68rem;color:var(--muted)">${[city, state, zip].filter(x=>x).join(' ')}</div>
+    </div>`;
+  }).join('');
+
+  dropdown.style.display = 'block';
+}
+
+function selectAutocompleteSuggestion(label){
+  document.getElementById('srch-input').value = label;
+  closeAutocomplete();
+  detectSearchMode();
+  runSearch();
+}
+
+function closeAutocomplete(){
+  document.getElementById('srch-autocomplete').style.display = 'none';
+  lastAutocompleteQuery = '';
+}
+
 function setStatusMsg(msg, sub){
   document.getElementById('srch-status-msg').textContent = msg;
   document.getElementById('srch-status-sub').textContent = sub||'';
@@ -1813,6 +1922,176 @@ function setStatusMsg(msg, sub){
 function initSearch(){
   if(!document.getElementById('srch-results').innerHTML){
     document.getElementById('srch-empty').style.display='block';
+  }
+}
+
+/* ══════════════════════════════════════
+   MAP FUNCTIONALITY (Phase 2)
+══════════════════════════════════════ */
+let mapInstance = null;
+let mapMarkers = [];
+let mapSearchResults = [];
+
+function initMapTab(){
+  setTimeout(() => {
+    if(!mapInstance && document.getElementById('map-container')) {
+      initMapBase();
+      centerMapOnCT();
+    }
+    if(mapInstance) mapInstance.invalidateSize();
+  }, 100);
+}
+
+function initMapBase(){
+  const container = document.getElementById('map-container');
+  if(!container || mapInstance) return;
+
+  mapInstance = L.map(container, {
+    zoomControl: false,
+    attributionControl: true
+  }).setView([41.5, -72.7], 9);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(mapInstance);
+
+  L.control.zoom({position:'topright'}).addTo(mapInstance);
+}
+
+function centerMapOnCT(){
+  if(mapInstance) mapInstance.setView([41.5, -72.7], 9);
+}
+
+function clearMapMarkers(){
+  mapMarkers.forEach(m => mapInstance.removeLayer(m));
+  mapMarkers = [];
+}
+
+function pinPropertyOnMap(property, index){
+  if(!mapInstance || !property.lat || !property.lng) return;
+
+  const dealScore = property.cap >= 6 ? 'good' : property.cap >= 4 ? 'warn' : 'bad';
+  const colors = {good: '#2ecfad', warn: '#f0b429', bad: '#ff5e5e'};
+  const color = colors[dealScore];
+
+  const html = `
+    <div style="background:${color};width:12px;height:12px;border-radius:50%;border:2px solid white;box-shadow:0 0 8px rgba(0,0,0,0.4)"></div>
+  `;
+  const icon = L.divIcon({
+    html: html,
+    iconSize: [16, 16],
+    className: 'map-marker-icon'
+  });
+
+  const popupContent = `<div style="font-size:0.75rem;min-width:180px">
+    <strong style="color:${color}">${property.address}</strong><br>
+    <div style="margin-top:4px;color:var(--muted)">$${property.price.toLocaleString()}</div>
+    <div style="margin-top:4px;font-size:0.7rem;color:var(--muted)">${property.beds} bd · ${property.baths} ba</div>
+    <div style="margin-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.7rem">
+      <div><span style="color:var(--muted)">CAP:</span> <strong style="color:${color}">${property.cap.toFixed(1)}%</strong></div>
+      <div><span style="color:var(--muted)">CF:</span> <strong style="color:${color}">$${property.mcf.toLocaleString()}</strong></div>
+    </div>
+    <button onclick="selectPropertyFromMap(${index})" style="margin-top:8px;width:100%;padding:6px;background:${color};border:none;border-radius:4px;color:white;font-size:0.72rem;font-weight:700;cursor:pointer">View →</button>
+  </div>`;
+
+  const marker = L.marker([property.lat, property.lng], {icon: icon})
+    .bindPopup(popupContent)
+    .addTo(mapInstance);
+
+  marker.on('click', () => selectPropertyFromMap(index));
+  mapMarkers.push(marker);
+}
+
+function selectPropertyFromMap(idx){
+  const p = mapSearchResults[idx];
+  if(!p) return;
+
+  const infoPanel = document.getElementById('map-info-panel');
+  infoPanel.innerHTML = `
+    <div style="text-align:left">
+      <div style="font-weight:700;color:var(--off);margin-bottom:6px">${p.address}, ${p.city}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.7rem;margin-bottom:10px">
+        <div><span style="color:var(--muted)">Price:</span> ${$f(p.price)}</div>
+        <div><span style="color:var(--muted)">Beds:</span> ${p.beds}</div>
+        <div><span style="color:var(--muted)">CAP:</span> ${p.cap.toFixed(1)}%</div>
+        <div><span style="color:var(--muted)">CF:</span> ${$f(p.mcf)}/mo</div>
+      </div>
+      <button onclick="loadIntoAnalyzer(searchResults.indexOf(searchResults.find(s=>s.address===this.dataset.addr)))" data-addr="${p.address}" style="width:100%;padding:8px;background:var(--teal);border:none;border-radius:4px;color:var(--navy);font-weight:700;cursor:pointer;font-size:0.72rem">Analyze This Property</button>
+    </div>
+  `;
+}
+
+function initMapAndSearch(){
+  if(!mapInstance) initMapBase();
+  centerMapOnCT();
+
+  const input = document.getElementById('srch-input').value.trim();
+  if(input && input.length > 0 && !isMLS(input)) {
+    setStatusMsg('Searching on map…', 'Finding properties in this area');
+    runMapSearch(input);
+  }
+}
+
+async function runMapSearch(query){
+  try {
+    const apiKey = document.getElementById('set-claude-key').value;
+    if(!apiKey){
+      setStatusMsg('API Key Missing', 'Configure Anthropic key in Settings');
+      return;
+    }
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-1-20250805',
+        max_tokens: 2000,
+        system: 'You are a real estate analyst. Return ONLY valid JSON (no markdown).',
+        messages: [{
+          role: 'user',
+          content: `Generate 6 realistic Connecticut investment property listings matching: "${query}"
+Return a JSON array with this structure for EACH:
+{
+  "address": "street address",
+  "city": "city",
+  "price": number,
+  "estimatedRent": number,
+  "beds": number,
+  "baths": number,
+  "sqft": number,
+  "type": "SFR|Multi|Condo",
+  "propertyTax": number,
+  "hoa": number,
+  "status": "Active|Pending|Sold",
+  "lat": 41.xxx,
+  "lng": -72.xxx
+}
+Use realistic CT coordinates. Make rent ~0.7-1% of price.`
+        }]
+      })
+    });
+
+    const data = await resp.json();
+    const text = data.content[0].text;
+    let listings = JSON.parse(text);
+
+    mapSearchResults = listings.map(l => scoreListingFull(l));
+    clearMapMarkers();
+    mapSearchResults.forEach((p, i) => pinPropertyOnMap(p, i));
+
+    if(mapInstance && mapMarkers.length > 0) {
+      const group = new L.featureGroup(mapMarkers);
+      mapInstance.fitBounds(group.getBounds(), {padding: [50, 50]});
+    }
+
+    setStatusMsg(`${mapSearchResults.length} properties found on map`, 'Click markers to view details');
+  } catch(e) {
+    console.error('Map search error:', e);
+    setStatusMsg('Search failed', 'Check API key and try again');
   }
 }
 
@@ -1968,11 +2247,13 @@ Requirements: use realistic CT street names and ZIP codes. Vary property types. 
       filtered = filtered.map(l=>scoreListingFull(l));
       searchResults = filtered;
       renderResults(filtered);
+      backgroundEnrichProperties(filtered);
     }
   } catch(err){
     console.error('Search error:',err);
     searchResults = getFallbackListings(raw).map(l=>scoreListingFull(l));
     renderResults(searchResults);
+    backgroundEnrichProperties(searchResults);
   }
   document.getElementById('srch-status').style.display='none';
 }
@@ -1995,6 +2276,161 @@ function scoreListingFull(l){
   const mcf = acf/12;
   const grm = l.price/(gross);
   return {...l, cap, coc, mcf, noi, pay, cap_score: cap>=6?'good':cap>=4?'warn':'bad'};
+}
+
+/* ══════════════════════════════════════
+   PROPERTY ENRICHMENT (Phase 3)
+══════════════════════════════════════ */
+let enrichmentCache = {};
+
+function createEnrichmentPrompt(property){
+  const type = (property.type || '').toLowerCase();
+  const isSFR = type.includes('single') || type.includes('sfr');
+  const isMulti = type.includes('multi') || type.includes('unit');
+  const isCondo = type.includes('condo') || type.includes('coop');
+
+  let prompt = `Analyze this ${property.type || 'residential'} property for investment potential.
+
+Property: ${property.address}, ${property.city}
+Price: $${property.price.toLocaleString()}
+Estimated Rent: $${property.estimatedRent.toLocaleString()}/month
+Property Tax: $${property.propertyTax.toLocaleString()}/year
+`;
+
+  if(isSFR){
+    prompt += `Generate detailed enrichment data for this single-family home:
+Return ONLY valid JSON with:
+{
+  "constructionType": "Wood Frame / Brick / Mixed",
+  "foundationType": "Slab / Crawl / Basement",
+  "roofMaterial": "Asphalt Shingle / Metal / Tile",
+  "roofAge": "new/5-10 years/15+ years",
+  "siding": "Vinyl / Brick / Wood / Composite",
+  "heating": "Oil / Natural Gas / Heat Pump / Electric",
+  "cooling": "Central AC / Window / None",
+  "appliances": "Older / Standard / Stainless Steel",
+  "utilities": {
+    "heating": estimated_annual_cost,
+    "cooling": estimated_annual_cost,
+    "water": estimated_annual_cost,
+    "electric": estimated_annual_cost
+  },
+  "assessedValue": estimated_assessment,
+  "lastSalePrice": estimated_price,
+  "lastSaleDate": "YYYY-MM-DD or null",
+  "daysOnMarket": estimated_dom,
+  "neighborhood": "suburban/urban/rural description",
+  "walkScore": 0-100,
+  "crimeRate": "Low/Medium/High",
+  "schoolRating": 1-10,
+  "maintenanceNeeds": "none/minor/moderate/major"
+}
+Use realistic 2025 Connecticut market data. Estimate utilities based on ${property.sqft || 1500} sqft and ${property.yearBuilt || 1980} build year.`;
+  } else if(isMulti){
+    prompt += `Generate detailed enrichment data for this multi-unit property:
+Return ONLY valid JSON with:
+{
+  "units": number,
+  "unitMix": "3x2bed+1x1bed / description",
+  "avgUnitRent": estimated_monthly,
+  "constructionType": "Wood / Concrete / Mixed",
+  "yearBuilt": ${property.yearBuilt || 1980},
+  "parkingSpaces": number,
+  "amenities": ["elevator", "laundry", "gym", "courtyard"],
+  "utilities": {
+    "heating": estimated_annual,
+    "cooling": estimated_annual,
+    "water": estimated_annual,
+    "electric": estimated_annual,
+    "trash": estimated_annual
+  },
+  "assessedValue": estimated_assessment,
+  "occupancyRate": 0.92,
+  "capExReserve": annual_recommendation,
+  "neighborhood": "location description",
+  "walkScore": 0-100,
+  "rentalDemand": "High/Medium/Low",
+  "recentComps": "example: 4-unit sold $950K in 2024"
+}`;
+  } else {
+    prompt += `Generate detailed enrichment data for this property:
+Return ONLY valid JSON with:
+{
+  "constructionType": "description",
+  "foundationType": "description",
+  "utilities": {
+    "heating": estimated_annual,
+    "cooling": estimated_annual,
+    "water": estimated_annual,
+    "electric": estimated_annual
+  },
+  "assessedValue": estimated_value,
+  "neighborhood": "description",
+  "walkScore": score,
+  "crimeRate": "Low/Medium/High",
+  "schoolRating": rating,
+  "rentalDemand": "High/Medium/Low",
+  "maintenanceNeeds": "assessment"
+}`;
+  }
+
+  return prompt;
+}
+
+async function enrichPropertyData(property){
+  const cacheKey = `${property.address}_${property.city}`.toLowerCase();
+  if(enrichmentCache[cacheKey] && Date.now() - enrichmentCache[cacheKey].ts < 86400000){
+    return enrichmentCache[cacheKey].data;
+  }
+
+  try{
+    const apiKey = document.getElementById('set-claude-key')?.value;
+    if(!apiKey) return property;
+
+    const prompt = createEnrichmentPrompt(property);
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-1-20250805',
+        max_tokens: 1200,
+        system: 'You are a real estate property analyst. Return ONLY valid JSON (no markdown, no explanations).',
+        messages: [{role: 'user', content: prompt}]
+      })
+    });
+
+    if(!resp.ok) return property;
+    const data = await resp.json();
+    const text = data.content[0].text;
+
+    try{
+      const enrichment = JSON.parse(text);
+      const enriched = {...property, enrichment, enrichedAt: new Date().toISOString()};
+      enrichmentCache[cacheKey] = {data: enriched, ts: Date.now()};
+      return enriched;
+    }catch{
+      return property;
+    }
+  }catch{
+    return property;
+  }
+}
+
+function backgroundEnrichProperties(listings){
+  if(!document.getElementById('set-claude-key')?.value) return;
+
+  listings.forEach((prop, idx) => {
+    const cacheKey = `${prop.address}_${prop.city}`.toLowerCase();
+    if(!enrichmentCache[cacheKey]) {
+      setTimeout(async () => {
+        const enriched = await enrichPropertyData(prop);
+        searchResults[idx] = enriched;
+      }, idx * 300);
+    }
+  });
 }
 
 function renderResults(listings){
@@ -2102,8 +2538,30 @@ function toggleSave(idx){
   const l = searchResults[idx];
   if(!l) return;
   const key = l.address;
-  if(savedProps[key]){ delete savedProps[key]; }
-  else { savedProps[key] = {note:'', tags:[], photos:[]}; }
+  if(savedProps[key]){
+    delete savedProps[key];
+  } else {
+    savedProps[key] = {
+      savedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      price: l.price,
+      beds: l.beds,
+      baths: l.baths,
+      sqft: l.sqft,
+      type: l.type,
+      yearBuilt: l.yearBuilt,
+      estimatedRent: l.estimatedRent,
+      propertyTax: l.propertyTax,
+      hoa: l.hoa||0,
+      city: l.city,
+      enrichment: l.enrichment||null,
+      analysis: {cap: l.cap, coc: l.coc, mcf: l.mcf, noi: l.noi},
+      note: '',
+      tags: [],
+      photos: [],
+      customMetrics: {}
+    };
+  }
   localStorage.setItem('ahn_saved', JSON.stringify(savedProps));
   const btn = document.getElementById('save-btn-'+idx);
   if(btn){ btn.className='lc-btn '+(savedProps[key]?'saved':''); btn.textContent=savedProps[key]?'★ Saved':'☆ Save'; }
@@ -2156,6 +2614,49 @@ function handlePhotoUpload(idx, input){
     };
     reader.readAsDataURL(file);
   });
+}
+
+/* ══════════════════════════════════════
+   EXPORT & BATCH OPERATIONS (Phase 4)
+══════════════════════════════════════ */
+function exportPropertyAsJSON(address){
+  const prop = savedProps[address];
+  if(!prop) return;
+  const json = JSON.stringify(prop, null, 2);
+  const blob = new Blob([json], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${address.split(',')[0].replace(/\s+/g, '_')}_property.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportPortfolioAsCSV(){
+  const rows = [['Address','City','Price','Beds','Baths','Est Rent','Annual Tax','CAP %','CoC %','Mo CF','Tags']];
+  Object.entries(savedProps).forEach(([addr, data]) => {
+    rows.push([
+      addr,
+      data.city||'',
+      data.price||'',
+      data.beds||'',
+      data.baths||'',
+      data.estimatedRent||'',
+      data.propertyTax||'',
+      data.analysis?.cap?.toFixed(1)||'',
+      data.analysis?.coc?.toFixed(1)||'',
+      data.analysis?.mcf?.toFixed(0)||'',
+      (data.tags||[]).join(';')
+    ]);
+  });
+  const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type: 'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `property_portfolio_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function getFallbackListings(query){
