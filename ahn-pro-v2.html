@@ -1000,6 +1000,16 @@ input[type=hidden]{display:none}
     </div>
   </div>
 
+  <!-- Inline map shown after search (like Backflip) -->
+  <div id="srch-map-wrap" style="display:none;margin-bottom:12px;border-radius:var(--r);overflow:hidden;border:1px solid var(--border2)">
+    <div id="srch-map-container" style="width:100%;height:220px"></div>
+    <div style="background:var(--card);padding:6px 12px;display:flex;gap:10px;font-size:0.6rem;color:var(--muted)">
+      <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;background:var(--green);border-radius:50%"></span>Strong</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;background:var(--amber);border-radius:50%"></span>Borderline</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;background:var(--red);border-radius:50%"></span>Review</span>
+    </div>
+  </div>
+
   <!-- Results -->
   <div id="srch-results"></div>
 
@@ -1029,33 +1039,94 @@ input[type=hidden]{display:none}
 </div>
 
 <!-- ══════════════════ MAP TAB (Phase 2) ══════════════════ -->
-<div id="tab-map" class="hidden" style="padding:0 !important">
-  <!-- Map Search Bar -->
-  <div style="padding:10px 14px;background:var(--navy);position:sticky;top:0;z-index:10;display:flex;gap:8px">
-    <input id="map-search-input" type="text" placeholder="Search city, ZIP, or neighborhood…"
-      style="flex:1;padding:10px 14px;background:var(--card2);border:1px solid var(--border2);border-radius:10px;color:var(--white);font-family:inherit;font-size:0.82rem;outline:none"
-      onkeydown="if(event.key==='Enter') mapSearchFromInput()">
-    <button onclick="mapSearchFromInput()" style="padding:10px 14px;background:var(--teal);border:none;border-radius:10px;font-family:inherit;font-size:0.78rem;font-weight:700;color:var(--navy);cursor:pointer;white-space:nowrap">Search</button>
+<!-- ══════════════════ MORTGAGE TAB ══════════════════ -->
+<div id="tab-mortgage" class="hidden">
+  <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:12px">
+    <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--teal);margin-bottom:14px">Loan Details</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div>
+        <div style="font-size:0.62rem;color:var(--muted);font-weight:600;margin-bottom:5px">HOME PRICE</div>
+        <input type="number" id="mc-home-price" value="650000" style="width:100%;padding:9px 10px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:0.82rem;font-family:inherit" oninput="calcDownAmt();calcMortgage()">
+      </div>
+      <div>
+        <div style="font-size:0.62rem;color:var(--muted);font-weight:600;margin-bottom:5px">DOWN PAYMENT %</div>
+        <input type="number" id="mc-down-pct" value="25" step="1" min="3" max="100" style="width:100%;padding:9px 10px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:0.82rem;font-family:inherit" oninput="calcDownAmt();calcMortgage()">
+      </div>
+      <div>
+        <div style="font-size:0.62rem;color:var(--muted);font-weight:600;margin-bottom:5px">DOWN AMOUNT</div>
+        <div id="mc-down-amt" style="padding:9px 10px;background:var(--card3);border:1px solid var(--border);border-radius:8px;color:var(--teal);font-size:0.82rem;font-weight:700">$162,500</div>
+      </div>
+      <div>
+        <div style="font-size:0.62rem;color:var(--muted);font-weight:600;margin-bottom:5px">LOAN AMOUNT</div>
+        <div id="mc-loan-display" style="padding:9px 10px;background:var(--card3);border:1px solid var(--border);border-radius:8px;color:var(--teal);font-size:0.82rem;font-weight:700">$487,500</div>
+      </div>
+      <div>
+        <div style="font-size:0.62rem;color:var(--muted);font-weight:600;margin-bottom:5px">INTEREST RATE %</div>
+        <input type="number" id="mc-rate" value="7.25" step="0.125" min="1" max="20" style="width:100%;padding:9px 10px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:0.82rem;font-family:inherit" oninput="calcMortgage()">
+      </div>
+      <div>
+        <div style="font-size:0.62rem;color:var(--muted);font-weight:600;margin-bottom:5px">LOAN TERM (YRS)</div>
+        <select id="mc-term" style="width:100%;padding:9px 10px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:0.82rem;font-family:inherit" onchange="calcMortgage()">
+          <option value="30" selected>30 years</option>
+          <option value="20">20 years</option>
+          <option value="15">15 years</option>
+          <option value="10">10 years</option>
+        </select>
+      </div>
+    </div>
   </div>
 
-  <!-- Full-width map like Backflip -->
-  <div id="map-container" style="width:100%;height:55vw;max-height:340px;min-height:200px;position:relative"></div>
-
-  <!-- Legend bar -->
-  <div style="background:var(--card);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:14px;font-size:0.62rem;color:var(--muted)">
-    <div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;background:var(--green);border-radius:50%"></div>Strong (6%+)</div>
-    <div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;background:var(--amber);border-radius:50%"></div>Borderline (4-6%)</div>
-    <div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;background:var(--red);border-radius:50%"></div>Review (&lt;4%)</div>
-    <button onclick="centerMapOnCT()" style="margin-left:auto;background:none;border:1px solid var(--border2);border-radius:6px;padding:4px 8px;color:var(--muted);font-size:0.6rem;cursor:pointer;font-family:inherit">Reset View</button>
+  <!-- Monthly Payment Highlight -->
+  <div style="background:linear-gradient(135deg,var(--teal),var(--teal2));border-radius:var(--r);padding:20px;margin-bottom:12px;text-align:center">
+    <div style="font-size:0.65rem;font-weight:700;color:var(--navy);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">Monthly Payment (P&I)</div>
+    <div id="mc-payment" style="font-size:2.8rem;font-weight:800;color:var(--navy);letter-spacing:-0.04em">—</div>
+    <div id="mc-pmi-note" style="font-size:0.65rem;color:rgba(15,31,56,0.7);margin-top:4px"></div>
   </div>
 
-  <!-- Property info panel - shows on pin click -->
-  <div id="map-info-panel" style="padding:14px;font-size:0.75rem;color:var(--muted);text-align:center">
-    Search above or tap a map pin to view property details
+  <!-- Breakdown grid -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+    <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--r2);padding:12px;text-align:center">
+      <div style="font-size:0.6rem;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:4px">Total Interest</div>
+      <div id="mc-interest" style="font-size:1rem;font-weight:700;color:var(--red)">—</div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--r2);padding:12px;text-align:center">
+      <div style="font-size:0.6rem;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:4px">Total Paid</div>
+      <div id="mc-total" style="font-size:1rem;font-weight:700;color:var(--off)">—</div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--r2);padding:12px;text-align:center">
+      <div style="font-size:0.6rem;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:4px">Break-even Rent</div>
+      <div id="mc-breakeven" style="font-size:1rem;font-weight:700;color:var(--amber)">—</div>
+    </div>
   </div>
 
-  <!-- Properties list from map search -->
-  <div id="map-props-list" style="padding:0 14px 14px;display:grid;gap:10px"></div>
+  <!-- PITI Section -->
+  <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:14px;margin-bottom:12px">
+    <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--teal);margin-bottom:10px">Full PITI Estimate</div>
+    <div style="display:flex;flex-direction:column;gap:7px;font-size:0.78rem">
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Principal & Interest</span><span id="piti-pi" style="font-weight:600;color:var(--off)">—</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Property Tax (est.)</span><span id="piti-tax" style="font-weight:600;color:var(--off)">—</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Home Insurance (est.)</span><span id="piti-ins" style="font-weight:600;color:var(--off)">—</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">PMI (if &lt;20% down)</span><span id="piti-pmi" style="font-weight:600;color:var(--off)">—</span></div>
+      <div style="height:1px;background:var(--border);margin:2px 0"></div>
+      <div style="display:flex;justify-content:space-between"><span style="font-weight:700;color:var(--off)">Total PITI</span><span id="piti-total" style="font-weight:800;color:var(--teal);font-size:0.88rem">—</span></div>
+    </div>
+  </div>
+
+  <!-- Amortization schedule toggle -->
+  <button onclick="toggleAmort()" style="width:100%;padding:11px;background:var(--card2);border:1px solid var(--border2);border-radius:var(--r2);color:var(--off);font-family:inherit;font-size:0.78rem;font-weight:700;cursor:pointer;margin-bottom:8px">
+    View Amortization Schedule ▾
+  </button>
+  <div id="amort-table" style="display:none;overflow-x:auto;border-radius:var(--r2);border:1px solid var(--border2)">
+    <table style="width:100%;border-collapse:collapse;font-size:0.68rem">
+      <thead><tr style="background:var(--card2)">
+        <th style="padding:8px 10px;text-align:left;color:var(--muted);font-weight:600">Year</th>
+        <th style="padding:8px 10px;text-align:right;color:var(--muted);font-weight:600">Principal</th>
+        <th style="padding:8px 10px;text-align:right;color:var(--muted);font-weight:600">Interest</th>
+        <th style="padding:8px 10px;text-align:right;color:var(--muted);font-weight:600">Balance</th>
+      </tr></thead>
+      <tbody id="amort-body"></tbody>
+    </table>
+  </div>
 </div>
 
 <!-- ══════════════════ PRESENT TAB ══════════════════ -->
@@ -1122,7 +1193,9 @@ input[type=hidden]{display:none}
           <span style="font-size:0.6rem;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:var(--teal);background:rgba(46,207,173,0.15);padding:3px 9px;border-radius:20px">Active</span>
         </div>
       <div style="font-size:0.72rem;color:var(--muted);line-height:1.6;margin-bottom:10px">Enter your Anthropic Claude API key to enable live analysis from the browser. Without a key, the app shows sample fallback listings.</div>
-      <div class="exrow"><span class="exlbl">Claude API Key</span><input type="password" class="exinp" id="set-claude-key" placeholder="sk-..." style="width:180px"></div>
+      <div class="exrow"><span class="exlbl">Claude API Key</span><input type="password" class="exinp" id="set-claude-key" placeholder="sk-ant-..." style="width:180px"></div>
+      <div class="exrow" style="margin-top:8px"><span class="exlbl">Google Maps Key <span style="color:var(--amber);font-size:0.6rem">(for photos)</span></span><input type="password" class="exinp" id="set-google-key" placeholder="AIza..." style="width:180px"></div>
+      <div style="font-size:0.65rem;color:var(--muted);margin-top:4px;padding:0 2px">Google key enables Street View property photos. Get a free key at Google Cloud Console with Maps Static API enabled.</div>
       </div>
 
       <!-- Live MLS Integration -->
@@ -1226,9 +1299,9 @@ input[type=hidden]{display:none}
     <svg class="bti-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     <div class="bti-lbl">Search</div><div class="bti-bar"></div>
   </button>
-  <button class="bti" onclick="goTab('map')" id="bt-map">
-    <svg class="bti-icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-    <div class="bti-lbl">Map</div><div class="bti-bar"></div>
+  <button class="bti" onclick="goTab('mortgage')" id="bt-mortgage">
+    <svg class="bti-icon" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><line x1="6" y1="8" x2="10" y2="8"/><line x1="6" y1="11" x2="14" y2="11"/></svg>
+    <div class="bti-lbl">Mortgage</div><div class="bti-bar"></div>
   </button>
   <button class="bti" onclick="goTab('present')" id="bt-present">
     <svg class="bti-icon" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
@@ -1270,22 +1343,21 @@ function slDownPct(){const s=document.getElementById('ls-dpct');pF(s);const pv=p
 function stp(id,delta,mn,mx){const e=document.getElementById(id);if(!e)return;let v=parseFloat(e.value)+delta;e.value=Math.max(mn,Math.min(mx,parseFloat(v.toFixed(2))));}
 
 /* ── NAVIGATION ── */
-const TABS=['analyze','compare','strltr','portfolio','search','map','present','report','settings'];
+const TABS=['analyze','compare','strltr','portfolio','search','mortgage','present','report','settings'];
 function goTab(t){
   TABS.forEach(x=>{
     document.getElementById('tab-'+x)?.classList.toggle('hidden',x!==t);
     const b=document.getElementById('bt-'+x);if(b)b.classList.toggle('on',x===t);
   });
-  const titles={analyze:'Analyze',compare:'Compare Deals',strltr:'STR vs LTR',portfolio:'Portfolio',search:'Property Search',map:'Map Search',present:'Present',report:'Deal Report',settings:'Settings'};
-  const subs={analyze:'Deal Analyzer Pro',compare:'Side-by-side scoring',strltr:'Same property, two strategies',portfolio:'Your properties',search:'AI-powered property finder',map:'Interactive property map',present:'Client presentation mode',report:'Branded client report',settings:'Platform configuration'};
+  const titles={analyze:'Analyze',compare:'Compare Deals',strltr:'STR vs LTR',portfolio:'Portfolio',search:'Property Search',mortgage:'Mortgage Calculator',present:'Present',report:'Deal Report',settings:'Settings'};
+  const subs={analyze:'Deal Analyzer Pro',compare:'Side-by-side scoring',strltr:'Same property, two strategies',portfolio:'Your properties',search:'AI-powered property finder',mortgage:'Estimate your loan & PITI',present:'Client presentation mode',report:'Branded client report',settings:'Platform configuration'};
   document.getElementById('page-title').textContent=titles[t]||t;
   document.getElementById('page-sub').textContent=subs[t]||'';
   document.getElementById('main-body').scrollTop=0;
-  // Remove body padding for map tab (full-width map like Backflip)
-  document.getElementById('main-body').style.padding = t==='map' ? '0' : '0 14px';
+  document.getElementById('main-body').style.padding = '0 14px';
   if(t==='compare')cCmp();
   if(t==='search'){initSearch();}
-  if(t==='map'){initMapTab();}
+  if(t==='mortgage'){calcMortgage();}
   if(t==='strltr')cSL();
   if(t==='portfolio')renderPortfolio();
   if(t==='settings')initSettings();
@@ -2304,11 +2376,21 @@ Return ONLY a valid JSON array (no markdown) with this structure:
   "hoa": monthly_hoa_or_0,
   "daysOnMarket": number,
   "status": "Active|Pending",
+  "lotSize": "e.g. 0.25 acres",
+  "assessedValue": number,
+  "lastSalePrice": number,
+  "lastSaleDate": "YYYY-MM-DD",
+  "walkScore": number_0_to_100,
+  "schoolRating": number_1_to_10,
+  "lat": 41.xxx,
+  "lng": -72.xxx,
   "highlights": "2 sentence property + investment description",
-  "investmentNote": "why this is or isn't a strong deal"
+  "neighborhood": "neighborhood name and character",
+  "investmentNote": "why this is or isn't a strong deal",
+  "comparableSales": "recent comp summary e.g. '3 similar sold $620-680k last 90 days'"
 }]
 
-Requirements: use realistic CT street names and ZIP codes. Vary property types. Make investment math work (rent should be ~0.7-1% of price). Include 1-2 value-add or below-market opportunities. Return ONLY the JSON array.`;
+Requirements: use realistic CT street names and ZIP codes. Include accurate lat/lng for CT. Vary property types. Make investment math work (rent ~0.7-1% of price). Include public record fields (assessed value ~80-90% of price, last sale 2-5 years ago). Return ONLY the JSON array.`;
   }
 
   try {
@@ -2358,6 +2440,8 @@ Requirements: use realistic CT street names and ZIP codes. Vary property types. 
       searchResults = filtered;
       renderResults(filtered);
       backgroundEnrichProperties(filtered);
+      // Pre-generate comps for first 3 results
+      filtered.slice(0,3).forEach(p => generateComparableProperties(p));
     }
   } catch(err){
     console.error('Search error:',err);
@@ -2695,37 +2779,81 @@ function renderPhotoCard(photo){
   `;
 }
 
-function calcMortgage(){
-  const loan = parseFloat(document.getElementById('mc-loan').value) || 0;
-  const rate = parseFloat(document.getElementById('mc-rate').value) || 0;
-  const term = parseFloat(document.getElementById('mc-term').value) || 30;
+function fmt$(n){return '$'+Math.round(n).toLocaleString();}
 
-  if(loan <= 0 || rate < 0 || term <= 0) {
-    document.getElementById('mc-payment').textContent = '—';
-    document.getElementById('mc-interest').textContent = '—';
-    document.getElementById('mc-total').textContent = '—';
-    document.getElementById('mc-ratio').textContent = '—';
-    return;
-  }
+function calcDownAmt(){
+  const price = parseFloat(document.getElementById('mc-home-price').value)||0;
+  const pct = parseFloat(document.getElementById('mc-down-pct').value)||25;
+  const down = price * pct / 100;
+  const loan = price - down;
+  document.getElementById('mc-down-amt').textContent = fmt$(down);
+  document.getElementById('mc-loan-display').textContent = fmt$(loan);
+  document.getElementById('mc-loan').value = loan;
+}
+
+function calcMortgage(){
+  const price = parseFloat(document.getElementById('mc-home-price')?.value)||650000;
+  const downPct = parseFloat(document.getElementById('mc-down-pct')?.value)||25;
+  const loan = price * (1 - downPct/100);
+  const rate = parseFloat(document.getElementById('mc-rate')?.value)||7.25;
+  const term = parseFloat(document.getElementById('mc-term')?.value)||30;
+
+  if(loan <= 0 || rate < 0) return;
 
   const monthlyRate = rate / 100 / 12;
-  const numPayments = term * 12;
-
-  let monthlyPayment = 0;
-  if(monthlyRate === 0) {
-    monthlyPayment = loan / numPayments;
-  } else {
-    monthlyPayment = loan * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
-  }
-
-  const totalPaid = monthlyPayment * numPayments;
+  const n = term * 12;
+  const pi = monthlyRate===0 ? loan/n : loan*(monthlyRate*Math.pow(1+monthlyRate,n))/(Math.pow(1+monthlyRate,n)-1);
+  const totalPaid = pi * n;
   const totalInterest = totalPaid - loan;
-  const principalIntRatio = ((monthlyPayment - (loan / numPayments)) / monthlyPayment * 100).toFixed(1);
 
-  document.getElementById('mc-payment').textContent = '$' + monthlyPayment.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  document.getElementById('mc-interest').textContent = '$' + totalInterest.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  document.getElementById('mc-total').textContent = '$' + totalPaid.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  document.getElementById('mc-ratio').textContent = principalIntRatio + '% int';
+  // Tax & insurance estimates
+  const taxMo = price * 0.016 / 12;
+  const insMo = price * 0.005 / 12;
+  const pmi = downPct < 20 ? loan * 0.007 / 12 : 0;
+  const piti = pi + taxMo + insMo + pmi;
+  const breakeven = pi + taxMo + insMo + pmi + price * 0.01 / 12; // add maintenance
+
+  const se2=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  se2('mc-payment', fmt$(pi));
+  se2('mc-interest', fmt$(totalInterest));
+  se2('mc-total', fmt$(totalPaid));
+  se2('mc-breakeven', fmt$(breakeven)+'/mo');
+  se2('piti-pi', fmt$(pi));
+  se2('piti-tax', fmt$(taxMo)+'/mo');
+  se2('piti-ins', fmt$(insMo)+'/mo');
+  se2('piti-pmi', downPct<20 ? fmt$(pmi)+'/mo' : 'Not required');
+  se2('piti-total', fmt$(piti)+'/mo');
+  se2('mc-pmi-note', downPct<20 ? 'PMI included until 20% equity reached' : '');
+
+  // Amortization
+  buildAmortTable(loan, monthlyRate, n, pi);
+}
+
+function buildAmortTable(loan, monthlyRate, n, pi){
+  let balance = loan;
+  let rows = '';
+  for(let yr=1; yr<=Math.min(n/12, 30); yr++){
+    let yearPrinc=0, yearInt=0;
+    for(let m=0;m<12&&(yr-1)*12+m<n;m++){
+      const intPmt = balance * monthlyRate;
+      const princPmt = pi - intPmt;
+      yearInt += intPmt;
+      yearPrinc += princPmt;
+      balance -= princPmt;
+    }
+    rows += `<tr style="border-top:1px solid var(--border)${yr%5===0?';background:rgba(255,255,255,0.02)':''}">
+      <td style="padding:7px 10px;color:var(--muted)">${yr}</td>
+      <td style="padding:7px 10px;text-align:right;color:var(--teal)">${fmt$(yearPrinc)}</td>
+      <td style="padding:7px 10px;text-align:right;color:var(--red)">${fmt$(yearInt)}</td>
+      <td style="padding:7px 10px;text-align:right;color:var(--off)">${fmt$(Math.max(0,balance))}</td>
+    </tr>`;
+  }
+  const tb=document.getElementById('amort-body');if(tb)tb.innerHTML=rows;
+}
+
+function toggleAmort(){
+  const t=document.getElementById('amort-table');
+  if(t) t.style.display=t.style.display==='none'?'block':'none';
 }
 
 async function displayPhotosForProperty(property){
@@ -2805,6 +2933,48 @@ function renderResults(listings){
     return 0;
   });
   document.getElementById('srch-results').innerHTML = sorted.map((l,i)=>renderListingCard(l,i)).join('');
+  // Show inline map with pins for all results
+  renderSearchMap(sorted);
+}
+
+let srchMapInstance = null;
+let srchMapMarkers = [];
+
+function renderSearchMap(listings){
+  const wrap = document.getElementById('srch-map-wrap');
+  if(!wrap || listings.length === 0) { if(wrap) wrap.style.display='none'; return; }
+
+  const withCoords = listings.filter(l => l.lat && l.lng);
+  if(withCoords.length === 0) { wrap.style.display='none'; return; }
+
+  wrap.style.display = 'block';
+
+  setTimeout(() => {
+    const container = document.getElementById('srch-map-container');
+    if(!container) return;
+
+    if(!srchMapInstance) {
+      srchMapInstance = L.map(container, {zoomControl:false,attributionControl:false}).setView([41.1,−72.9],10);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(srchMapInstance);
+      L.control.zoom({position:'topright'}).addTo(srchMapInstance);
+    } else {
+      srchMapMarkers.forEach(m=>srchMapInstance.removeLayer(m));
+      srchMapMarkers=[];
+    }
+
+    withCoords.forEach((p,i) => {
+      const color = p.cap>=6?'#2ecfad':p.cap>=4?'#f0b429':'#ff5e5e';
+      const icon = L.divIcon({html:`<div style="background:${color};width:12px;height:12px;border-radius:50%;border:2px solid white;box-shadow:0 0 6px rgba(0,0,0,0.4)"></div>`,iconSize:[16,16],className:''});
+      const m = L.marker([p.lat,p.lng],{icon})
+        .bindPopup(`<div style="font-size:0.72rem;min-width:160px"><strong>${p.address}</strong><br><span style="color:#666">$${p.price.toLocaleString()} · CAP ${p.cap.toFixed(1)}%</span></div>`)
+        .addTo(srchMapInstance);
+      srchMapMarkers.push(m);
+    });
+
+    const group = new L.featureGroup(srchMapMarkers);
+    srchMapInstance.fitBounds(group.getBounds(), {padding:[20,20]});
+    srchMapInstance.invalidateSize();
+  }, 200);
 }
 
 function renderListingCard(l, idx){
@@ -2823,10 +2993,21 @@ function renderListingCard(l, idx){
       ${l.rentComps ? `<div style="font-size:.65rem;color:var(--muted);margin-top:3px">🏠 ${l.rentComps}</div>` : ''}
       ${l.schoolDistrict ? `<div style="font-size:.65rem;color:var(--muted);margin-top:3px">🎓 ${l.schoolDistrict}</div>` : ''}
     </div>` : '';
+  // Property photo: Google Street View if key set, else OSM static map, else emoji
+  const gKey = document.getElementById('set-google-key')?.value?.trim();
+  const addrEnc = encodeURIComponent((l.address||'')+', '+(l.city||''));
+  const photoHtml = gKey
+    ? `<img src="https://maps.googleapis.com/maps/api/streetview?size=600x300&location=${addrEnc}&key=${gKey}&source=outdoor"
+         style="width:100%;height:160px;object-fit:cover;display:block"
+         onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+         alt="Street view">
+       <div class="lc-photo-placeholder" style="display:none">🏠</div>`
+    : `<div class="lc-photo-placeholder">🏠</div>`;
+
   return `
 <div class="listing-card" id="lc-${idx}">
   <div style="position:relative">
-    <div class="lc-photo-placeholder">🏠</div>
+    ${photoHtml}
     <span class="lc-badge ${badgeCls}" style="position:absolute;top:10px;left:10px">${badgeTxt}</span>
     <span style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.65);color:white;font-size:.6rem;font-weight:700;padding:3px 8px;border-radius:20px">${l.status}${l.daysOnMarket?` · ${l.daysOnMarket}d`:''}</span>
     ${mlsBadge}
@@ -2853,6 +3034,20 @@ function renderListingCard(l, idx){
     ${l.highlights?`<div style="font-size:.7rem;color:var(--muted);margin-bottom:10px;line-height:1.5">${l.highlights}</div>`:''}
     ${extraInfo}
     <div style="font-size:.67rem;color:var(--muted2);margin-bottom:10px">Est. rent: <strong style="color:var(--off)">${$f(l.estimatedRent)}/mo</strong> · Tax: <strong style="color:var(--off)">${$f(l.propertyTax)}/yr</strong>${l.hoa?` · HOA: <strong style="color:var(--off)">${$f(l.hoa)}/mo</strong>`:''}</div>
+    <!-- Public Records Facts -->
+    <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:9px 11px;margin-bottom:10px;font-size:0.67rem">
+      <div style="font-size:0.58rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--teal);margin-bottom:7px">PUBLIC RECORD DATA</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px 12px">
+        ${l.assessedValue?`<div><span style="color:var(--muted)">Assessed:</span> <strong style="color:var(--off)">$${l.assessedValue.toLocaleString()}</strong></div>`:''}
+        ${l.lastSalePrice?`<div><span style="color:var(--muted)">Last Sale:</span> <strong style="color:var(--off)">$${l.lastSalePrice.toLocaleString()}</strong></div>`:''}
+        ${l.lastSaleDate?`<div><span style="color:var(--muted)">Sale Date:</span> <strong style="color:var(--off)">${l.lastSaleDate}</strong></div>`:''}
+        ${l.daysOnMarket?`<div><span style="color:var(--muted)">DOM:</span> <strong style="color:var(--off)">${l.daysOnMarket} days</strong></div>`:''}
+        ${l.yearBuilt?`<div><span style="color:var(--muted)">Year Built:</span> <strong style="color:var(--off)">${l.yearBuilt}</strong></div>`:''}
+        ${l.lotSize?`<div><span style="color:var(--muted)">Lot:</span> <strong style="color:var(--off)">${l.lotSize}</strong></div>`:''}
+        ${l.walkScore?`<div><span style="color:var(--muted)">Walk Score:</span> <strong style="color:var(--off)">${l.walkScore}/100</strong></div>`:''}
+        ${l.schoolRating?`<div><span style="color:var(--muted)">Schools:</span> <strong style="color:var(--off)">${l.schoolRating}/10</strong></div>`:''}
+      </div>
+    </div>
     <div class="lc-actions">
       <button class="lc-btn primary" onclick="loadIntoAnalyzer(${idx})">Analyze → </button>
       <button class="lc-btn ${isSaved?'saved':''}" id="save-btn-${idx}" onclick="toggleSave(${idx})">${isSaved?'★ Saved':'☆ Save'}</button>
