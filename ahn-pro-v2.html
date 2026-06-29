@@ -2186,8 +2186,10 @@ function renderAutocompleteSuggestions(suggestions){
   }
 
   dropdown.innerHTML = suggestions.map((s, i) => {
-    const displayName = s.address?.road ? `${s.address.road}` : s.name;
-    const city = s.address?.city || s.address?.town || '';
+    const houseNum = s.address?.house_number || '';
+    const road = s.address?.road || s.name || '';
+    const displayName = houseNum ? `${houseNum} ${road}` : road;
+    const city = s.address?.city || s.address?.town || s.address?.village || '';
     const state = s.address?.state || '';
     const zip = s.address?.postcode || '';
     const label = [displayName, city, state, zip].filter(x=>x).join(', ');
@@ -2202,7 +2204,12 @@ function renderAutocompleteSuggestions(suggestions){
 }
 
 function selectAutocompleteSuggestion(label){
-  document.getElementById('srch-input').value = label;
+  const input = document.getElementById('srch-input');
+  // If suggestion has no house number but user typed one, prepend it
+  const typed = input.value.trim();
+  const houseMatch = typed.match(/^(\d+)\s+/);
+  const labelHasNumber = /^\d+\s/.test(label);
+  input.value = (houseMatch && !labelHasNumber) ? houseMatch[1] + ' ' + label : label;
   closeAutocomplete();
   detectSearchMode();
   runSearch();
