@@ -560,12 +560,124 @@ input[type=hidden]{display:none}
 
 <div class="body" id="main-body">
 
-<div class="app-cta-row">
-  <button type="button" class="app-add-btn" onclick="addPropAndOpenPortfolio()">+ Add Properties</button>
-</div>
-
 <!-- ══════════════════ ANALYZE TAB ══════════════════ -->
 <div id="tab-analyze">
+
+  <!-- MARKET RATES BAR -->
+  <div id="market-rates-bar" style="background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:12px 14px;margin-bottom:10px">
+    <div style="font-size:0.58rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--teal);margin-bottom:8px">Today's Market</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
+      <div style="text-align:center;padding:6px 4px;background:var(--card2);border-radius:8px">
+        <div style="font-size:0.82rem;font-weight:700;color:var(--white)">7.25%</div>
+        <div style="font-size:0.52rem;color:var(--muted);font-weight:600;margin-top:1px">30-YR FIXED</div>
+      </div>
+      <div style="text-align:center;padding:6px 4px;background:var(--card2);border-radius:8px">
+        <div style="font-size:0.82rem;font-weight:700;color:var(--white)">6.91%</div>
+        <div style="font-size:0.52rem;color:var(--muted);font-weight:600;margin-top:1px">15-YR FIXED</div>
+      </div>
+      <div style="text-align:center;padding:6px 4px;background:var(--card2);border-radius:8px">
+        <div style="font-size:0.82rem;font-weight:700;color:var(--amber)">6.4%</div>
+        <div style="font-size:0.52rem;color:var(--muted);font-weight:600;margin-top:1px">5/1 ARM</div>
+      </div>
+      <div style="text-align:center;padding:6px 4px;background:var(--card2);border-radius:8px">
+        <div style="font-size:0.82rem;font-weight:700;color:var(--teal)">+4.8%</div>
+        <div style="font-size:0.52rem;color:var(--muted);font-weight:600;margin-top:1px">CT YOY</div>
+      </div>
+    </div>
+    <div style="font-size:0.58rem;color:var(--muted2);margin-top:7px;text-align:center">CT Market · Updated Jun 2025 · Enter your Claude key in Settings for live AI analysis</div>
+  </div>
+
+  <!-- SEARCH BAR (merged from Search tab) -->
+  <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;margin-bottom:8px">
+    <div style="padding:14px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;position:relative">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="var(--teal)" stroke-width="2"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="var(--teal)" stroke-width="2" stroke-linecap="round"/></svg>
+      <input type="text" id="srch-input"
+        placeholder="City, ZIP, address, or MLS# …"
+        style="flex:1;background:none;border:none;outline:none;font-family:inherit;font-size:0.88rem;font-weight:500;color:var(--white);min-width:0"
+        oninput="detectSearchMode();fetchAddressSuggestions()" onkeydown="if(event.key==='Enter'){closeAutocomplete();runSearch();}if(event.key==='Escape')closeAutocomplete()" autocomplete="off">
+      <button onclick="closeAutocomplete();runSearch()" id="srch-btn"
+        style="background:var(--teal);border:none;border-radius:8px;padding:8px 15px;font-family:inherit;font-size:0.72rem;font-weight:800;color:var(--navy);cursor:pointer;letter-spacing:0.02em;flex-shrink:0;-webkit-tap-highlight-color:transparent;position:relative;z-index:200">
+        Search
+      </button>
+      <div id="srch-autocomplete" style="position:absolute;top:100%;left:15px;right:90px;background:var(--card2);border:1px solid var(--border2);border-top:none;border-radius:0 0 8px 8px;max-height:220px;overflow-y:auto;display:none;z-index:100;margin-top:-1px"></div>
+    </div>
+    <div id="srch-mode-bar" style="padding:8px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;min-height:36px">
+      <span id="srch-mode-pill" style="display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:20px;font-size:0.62rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;background:rgba(46,207,173,0.12);color:var(--teal)">
+        <span id="srch-mode-dot" style="width:5px;height:5px;border-radius:50%;background:var(--teal)"></span>
+        <span id="srch-mode-txt">AI Property Search</span>
+      </span>
+      <span id="srch-mode-hint" style="font-size:0.67rem;color:var(--muted)">City, ZIP, neighborhood, or address</span>
+    </div>
+    <div id="srch-filters">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-bottom:1px solid var(--border)">
+        <div style="padding:9px 12px;border-right:1px solid var(--border)">
+          <div style="font-size:0.56rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Type</div>
+          <select id="sf-type" style="background:none;border:none;outline:none;font-family:inherit;font-size:0.74rem;font-weight:600;color:var(--white);width:100%;cursor:pointer">
+            <option value="all">Any</option><option value="sfr">Single Family</option><option value="multi">Multi-Unit</option><option value="condo">Condo / TH</option>
+          </select>
+        </div>
+        <div style="padding:9px 12px;border-right:1px solid var(--border)">
+          <div style="font-size:0.56rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Max Price</div>
+          <select id="sf-price" style="background:none;border:none;outline:none;font-family:inherit;font-size:0.74rem;font-weight:600;color:var(--white);width:100%;cursor:pointer">
+            <option value="0">Any</option><option value="400000">$400K</option><option value="600000">$600K</option><option value="800000">$800K</option><option value="1000000">$1M</option><option value="1500000">$1.5M</option><option value="2000000">$2M+</option>
+          </select>
+        </div>
+        <div style="padding:9px 12px">
+          <div style="font-size:0.56rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Min Beds</div>
+          <select id="sf-beds" style="background:none;border:none;outline:none;font-family:inherit;font-size:0.74rem;font-weight:600;color:var(--white);width:100%;cursor:pointer">
+            <option value="0">Any</option><option value="2">2+</option><option value="3">3+</option><option value="4">4+</option>
+          </select>
+        </div>
+      </div>
+      <div style="padding:9px 15px;display:flex;gap:7px;flex-wrap:wrap;align-items:center">
+        <span style="font-size:0.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em">Sort:</span>
+        <button onclick="setSortBy('cap')" id="sort-cap" class="sort-chip on">CAP Rate</button>
+        <button onclick="setSortBy('cf')" id="sort-cf" class="sort-chip">Cash Flow</button>
+        <button onclick="setSortBy('price')" id="sort-price" class="sort-chip">Price</button>
+        <button onclick="setSortBy('roi')" id="sort-roi" class="sort-chip">ROI</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick search pills -->
+  <div id="srch-quick" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+    <span style="font-size:0.62rem;font-weight:600;color:var(--muted);line-height:28px">Try:</span>
+    <button onclick="quickSearch('Stamford CT 06902')" class="sort-chip">Stamford CT</button>
+    <button onclick="quickSearch('Greenwich CT investor properties under 1M')" class="sort-chip">Greenwich CT</button>
+    <button onclick="quickSearch('Norwalk CT multi-family')" class="sort-chip">Norwalk multi-family</button>
+    <button onclick="quickSearch('Bridgeport CT cash flow properties')" class="sort-chip">Bridgeport CF</button>
+  </div>
+
+  <!-- AI Status -->
+  <div id="srch-status" style="display:none">
+    <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:24px 20px;text-align:center;margin-bottom:12px">
+      <div style="width:32px;height:32px;border:2.5px solid var(--teal);border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 14px"></div>
+      <div id="srch-status-msg" style="font-size:0.8rem;font-weight:600;color:var(--off);margin-bottom:4px">Claude is analyzing…</div>
+      <div id="srch-status-sub" style="font-size:0.7rem;color:var(--muted)">Estimating rents, taxes, and investment metrics</div>
+    </div>
+  </div>
+
+  <!-- Inline map shown after search -->
+  <div id="srch-map-wrap" style="display:none;margin-bottom:12px;border-radius:var(--r);overflow:hidden;border:1px solid var(--border2)">
+    <div id="srch-map-container" style="width:100%;height:220px"></div>
+    <div style="background:var(--card);padding:6px 12px;display:flex;gap:10px;font-size:0.6rem;color:var(--muted)">
+      <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;background:var(--green);border-radius:50%"></span>Strong</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;background:var(--amber);border-radius:50%"></span>Borderline</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;background:var(--red);border-radius:50%"></span>Review</span>
+    </div>
+  </div>
+
+  <!-- Search Results -->
+  <div id="srch-results"></div>
+
+  <!-- Divider between search and manual analyzer -->
+  <div id="analyzer-divider" style="display:flex;align-items:center;gap:10px;margin:16px 0 12px">
+    <div style="flex:1;height:1px;background:var(--border2)"></div>
+    <span style="font-size:0.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;white-space:nowrap">or analyze manually</span>
+    <div style="flex:1;height:1px;background:var(--border2)"></div>
+  </div>
+
+  <!-- ANALYZER (Buy & Hold / Fix & Flip) -->
   <div class="tab-strip">
     <button class="tsb on" id="ts-ltl" onclick="setAnalyzeMode('ltl')">Buy &amp; Hold</button>
     <button class="tsb" id="ts-flip" onclick="setAnalyzeMode('flip')">Fix &amp; Flip</button>
@@ -872,135 +984,6 @@ input[type=hidden]{display:none}
 </div>
 
 
-<!-- ══════════════════ SEARCH TAB ══════════════════ -->
-<div id="tab-search" class="hidden">
-
-  <!-- Search input card -->
-  <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;margin-bottom:8px">
-
-    <!-- Main search bar -->
-    <div style="padding:14px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;position:relative">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="var(--teal)" stroke-width="2"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="var(--teal)" stroke-width="2" stroke-linecap="round"/></svg>
-      <input type="text" id="srch-input"
-        placeholder="Address, city, ZIP, or MLS# …"
-        style="flex:1;background:none;border:none;outline:none;font-family:inherit;font-size:0.88rem;font-weight:500;color:var(--white);min-width:0"
-        oninput="detectSearchMode();fetchAddressSuggestions()" onkeydown="if(event.key==='Enter')runSearch();if(event.key==='Escape')closeAutocomplete()" autocomplete="off">
-      <button onclick="runSearch()" id="srch-btn"
-        style="background:var(--teal);border:none;border-radius:8px;padding:8px 15px;font-family:inherit;font-size:0.72rem;font-weight:800;color:var(--navy);cursor:pointer;letter-spacing:0.02em;flex-shrink:0;-webkit-tap-highlight-color:transparent">
-        Analyze
-      </button>
-      <div id="srch-autocomplete" style="position:absolute;top:100%;left:15px;right:15px;background:var(--card2);border:1px solid var(--border2);border-top:none;border-radius:0 0 8px 8px;max-height:220px;overflow-y:auto;display:none;z-index:100;margin-top:-1px"></div>
-    </div>
-
-    <!-- Search mode indicator -->
-    <div id="srch-mode-bar" style="padding:8px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;min-height:36px">
-      <span id="srch-mode-pill" style="display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:20px;font-size:0.62rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;background:rgba(46,207,173,0.12);color:var(--teal)">
-        <span id="srch-mode-dot" style="width:5px;height:5px;border-radius:50%;background:var(--teal)"></span>
-        <span id="srch-mode-txt">AI Property Search</span>
-      </span>
-      <span id="srch-mode-hint" style="font-size:0.67rem;color:var(--muted)">City, ZIP, neighborhood, or address</span>
-    </div>
-
-    <!-- Filters (hidden for MLS# mode) -->
-    <div id="srch-filters">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-bottom:1px solid var(--border)">
-        <div style="padding:9px 12px;border-right:1px solid var(--border)">
-          <div style="font-size:0.56rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Type</div>
-          <select id="sf-type" style="background:none;border:none;outline:none;font-family:inherit;font-size:0.74rem;font-weight:600;color:var(--white);width:100%;cursor:pointer">
-            <option value="all">Any</option>
-            <option value="sfr">Single Family</option>
-            <option value="multi">Multi-Unit</option>
-            <option value="condo">Condo / TH</option>
-          </select>
-        </div>
-        <div style="padding:9px 12px;border-right:1px solid var(--border)">
-          <div style="font-size:0.56rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Max Price</div>
-          <select id="sf-price" style="background:none;border:none;outline:none;font-family:inherit;font-size:0.74rem;font-weight:600;color:var(--white);width:100%;cursor:pointer">
-            <option value="0">Any</option>
-            <option value="400000">$400K</option>
-            <option value="600000">$600K</option>
-            <option value="800000">$800K</option>
-            <option value="1000000">$1M</option>
-            <option value="1500000">$1.5M</option>
-            <option value="2000000">$2M+</option>
-          </select>
-        </div>
-        <div style="padding:9px 12px">
-          <div style="font-size:0.56rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Min Beds</div>
-          <select id="sf-beds" style="background:none;border:none;outline:none;font-family:inherit;font-size:0.74rem;font-weight:600;color:var(--white);width:100%;cursor:pointer">
-            <option value="0">Any</option>
-            <option value="2">2+</option>
-            <option value="3">3+</option>
-            <option value="4">4+</option>
-          </select>
-        </div>
-      </div>
-      <div style="padding:9px 15px;display:flex;gap:7px;flex-wrap:wrap;align-items:center">
-        <span style="font-size:0.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em">Sort:</span>
-        <button onclick="setSortBy('cap')" id="sort-cap" class="sort-chip on">CAP Rate</button>
-        <button onclick="setSortBy('cf')" id="sort-cf" class="sort-chip">Cash Flow</button>
-        <button onclick="setSortBy('price')" id="sort-price" class="sort-chip">Price</button>
-        <button onclick="setSortBy('roi')" id="sort-roi" class="sort-chip">ROI</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Quick search pills -->
-  <div id="srch-quick" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
-    <span style="font-size:0.62rem;font-weight:600;color:var(--muted);line-height:28px">Try:</span>
-    <button onclick="quickSearch('Stamford CT 06902')" class="sort-chip">Stamford CT</button>
-    <button onclick="quickSearch('Greenwich CT investor properties under 1M')" class="sort-chip">Greenwich CT</button>
-    <button onclick="quickSearch('Norwalk CT multi-family')" class="sort-chip">Norwalk multi-family</button>
-    <button onclick="quickSearch('Bridgeport CT cash flow properties')" class="sort-chip">Bridgeport CF</button>
-  </div>
-
-  <!-- AI Status -->
-  <div id="srch-status" style="display:none">
-    <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--r);padding:24px 20px;text-align:center;margin-bottom:12px">
-      <div style="width:32px;height:32px;border:2.5px solid var(--teal);border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 14px"></div>
-      <div id="srch-status-msg" style="font-size:0.8rem;font-weight:600;color:var(--off);margin-bottom:4px">Claude is analyzing…</div>
-      <div id="srch-status-sub" style="font-size:0.7rem;color:var(--muted)">Estimating rents, taxes, and investment metrics</div>
-    </div>
-  </div>
-
-  <!-- Inline map shown after search (like Backflip) -->
-  <div id="srch-map-wrap" style="display:none;margin-bottom:12px;border-radius:var(--r);overflow:hidden;border:1px solid var(--border2)">
-    <div id="srch-map-container" style="width:100%;height:220px"></div>
-    <div style="background:var(--card);padding:6px 12px;display:flex;gap:10px;font-size:0.6rem;color:var(--muted)">
-      <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;background:var(--green);border-radius:50%"></span>Strong</span>
-      <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;background:var(--amber);border-radius:50%"></span>Borderline</span>
-      <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;background:var(--red);border-radius:50%"></span>Review</span>
-    </div>
-  </div>
-
-  <!-- Results -->
-  <div id="srch-results"></div>
-
-  <!-- Empty / landing state -->
-  <div id="srch-empty" style="text-align:center;padding:32px 20px">
-    <div style="width:56px;height:56px;background:var(--teal-f);border:1px solid rgba(46,207,173,0.2);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.6rem">🏠</div>
-    <div style="font-size:0.92rem;font-weight:800;color:var(--off);margin-bottom:8px;letter-spacing:-0.02em">AI-Powered Property Search</div>
-    <div style="font-size:0.74rem;color:var(--muted);line-height:1.7;max-width:280px;margin:0 auto">
-      Search by <strong style="color:var(--off)">city</strong>, <strong style="color:var(--off)">ZIP code</strong>, <strong style="color:var(--off)">neighborhood</strong>, or <strong style="color:var(--off)">MLS#</strong>.<br>
-      Claude analyzes each property and scores its investment potential — CAP rate, cash flow, stress tests, exit ROI.
-    </div>
-    <div style="margin-top:20px;display:flex;flex-direction:column;gap:8px;max-width:280px;margin-left:auto;margin-right:auto">
-      <div style="background:var(--card);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;text-align:left">
-        <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--teal);margin-bottom:3px">Address lookup</div>
-        <div style="font-size:0.76rem;color:var(--muted)">142 Birchwood Dr, Stamford CT</div>
-      </div>
-      <div style="background:var(--card);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;text-align:left">
-        <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--teal);margin-bottom:3px">MLS# lookup</div>
-        <div style="font-size:0.76rem;color:var(--muted)">MLS# 170612345 &nbsp;or&nbsp; #170612345</div>
-      </div>
-      <div style="background:var(--card);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;text-align:left">
-        <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--teal);margin-bottom:3px">Market search</div>
-        <div style="font-size:0.76rem;color:var(--muted)">3-unit properties Norwalk CT under $800K</div>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- ══════════════════ MAP TAB (Phase 2) ══════════════════ -->
 <!-- ══════════════════ MORTGAGE TAB ══════════════════ -->
 <div id="tab-mortgage" class="hidden">
@@ -1243,8 +1226,8 @@ input[type=hidden]{display:none}
 <!-- BOTTOM TAB BAR -->
 <div class="btab">
   <button class="bti on" onclick="goTab('analyze')" id="bt-analyze">
-    <svg class="bti-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <div class="bti-lbl">Analyze</div><div class="bti-bar"></div>
+    <svg class="bti-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <div class="bti-lbl">Search</div><div class="bti-bar"></div>
   </button>
   <button class="bti" onclick="goTab('compare')" id="bt-compare">
     <svg class="bti-icon" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
@@ -1257,10 +1240,6 @@ input[type=hidden]{display:none}
   <button class="bti" onclick="goTab('portfolio')" id="bt-portfolio">
     <svg class="bti-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     <div class="bti-lbl">Portfolio</div><div class="bti-bar"></div>
-  </button>
-  <button class="bti" onclick="goTab('search')" id="bt-search">
-    <svg class="bti-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <div class="bti-lbl">Search</div><div class="bti-bar"></div>
   </button>
   <button class="bti" onclick="goTab('mortgage')" id="bt-mortgage">
     <svg class="bti-icon" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><line x1="6" y1="8" x2="10" y2="8"/><line x1="6" y1="11" x2="14" y2="11"/></svg>
@@ -1306,20 +1285,20 @@ function slDownPct(){const s=document.getElementById('ls-dpct');pF(s);const pv=p
 function stp(id,delta,mn,mx){const e=document.getElementById(id);if(!e)return;let v=parseFloat(e.value)+delta;e.value=Math.max(mn,Math.min(mx,parseFloat(v.toFixed(2))));}
 
 /* ── NAVIGATION ── */
-const TABS=['analyze','compare','strltr','portfolio','search','mortgage','present','report','settings'];
+const TABS=['analyze','compare','strltr','portfolio','mortgage','present','report','settings'];
 function goTab(t){
+  if(t==='search') t='analyze'; // search is now inside analyze
   TABS.forEach(x=>{
     document.getElementById('tab-'+x)?.classList.toggle('hidden',x!==t);
     const b=document.getElementById('bt-'+x);if(b)b.classList.toggle('on',x===t);
   });
-  const titles={analyze:'Analyze',compare:'Compare Deals',strltr:'STR vs LTR',portfolio:'Portfolio',search:'Property Search',mortgage:'Mortgage Calculator',present:'Present',report:'Deal Report',settings:'Settings'};
-  const subs={analyze:'Deal Analyzer Pro',compare:'Side-by-side scoring',strltr:'Same property, two strategies',portfolio:'Your properties',search:'AI-powered property finder',mortgage:'Estimate your loan & PITI',present:'Client presentation mode',report:'Branded client report',settings:'Platform configuration'};
+  const titles={analyze:'Search & Analyze',compare:'Compare Deals',strltr:'STR vs LTR',portfolio:'Portfolio',mortgage:'Mortgage Calculator',present:'Present',report:'Deal Report',settings:'Settings'};
+  const subs={analyze:'AI Property Finder · Deal Analyzer',compare:'Side-by-side scoring',strltr:'Same property, two strategies',portfolio:'Your properties',mortgage:'Estimate your loan & PITI',present:'Client presentation mode',report:'Branded client report',settings:'Platform configuration'};
   document.getElementById('page-title').textContent=titles[t]||t;
   document.getElementById('page-sub').textContent=subs[t]||'';
   document.getElementById('main-body').scrollTop=0;
   document.getElementById('main-body').style.padding = '0 14px';
   if(t==='compare')cCmp();
-  if(t==='search'){initSearch();}
   if(t==='mortgage'){calcMortgage();}
   if(t==='strltr')cSL();
   if(t==='portfolio')renderPortfolio();
@@ -2416,23 +2395,26 @@ Requirements: use realistic CT street names and ZIP codes. Include accurate lat/
 }
 
 function scoreListingFull(l){
-  const down = l.price * 0.25;
-  const loan = l.price - down;
+  const price = l.price || 500000;
+  const rent = l.estimatedRent || Math.round(price * 0.007);
+  const tax = l.propertyTax || Math.round(price * 0.016);
+  const hoa = l.hoa || 0;
+  const down = price * 0.25;
+  const loan = price - down;
   const rate = 7.25;
   const r = rate/100/12, n = 30*12;
   const pay = loan*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);
   const debt = pay*12;
-  const gross = l.estimatedRent*12;
+  const gross = rent*12;
   const vl = gross*0.05;
   const mgmt = gross*0.08;
-  const opex = l.propertyTax + 2400 + mgmt + 3000 + l.hoa;
+  const opex = tax + 2400 + mgmt + 3000 + hoa;
   const noi = gross - vl - opex;
   const acf = noi - debt;
-  const cap = (noi/l.price)*100;
+  const cap = (noi/price)*100;
   const coc = (acf/down)*100;
   const mcf = acf/12;
-  const grm = l.price/(gross);
-  return {...l, cap, coc, mcf, noi, pay, cap_score: cap>=6?'good':cap>=4?'warn':'bad'};
+  return {...l, price, estimatedRent:rent, propertyTax:tax, hoa, cap, coc, mcf, noi, pay, cap_score: cap>=6?'good':cap>=4?'warn':'bad'};
 }
 
 /* ══════════════════════════════════════
@@ -3191,13 +3173,15 @@ function exportPortfolioAsCSV(){
 }
 
 function getFallbackListings(query){
+  // Use a sensible CT city label - don't show raw query as city
+  const cityLabel = (/^\d+$/.test(query.trim()) || /\d+\s+\w/.test(query)) ? 'Stamford, CT' : (query.split(',')[0].trim() || 'Stamford, CT');
   return [
-    {address:'142 Birchwood Dr',city:query+' 06902',price:489000,beds:3,baths:2,sqft:1380,type:'Single Family',yearBuilt:1965,estimatedRent:3100,propertyTax:7200,hoa:0,daysOnMarket:8,status:'Active',highlights:'Updated kitchen, hardwood floors, 2-car garage',assessedValue:421000,lastSalePrice:362000,lastSaleDate:'2021-03-14',lotSize:'0.22 acres',walkScore:62,schoolRating:7,neighborhood:'Quiet residential neighborhood near park',comparableSales:'3 similar sold $470–510k last 90 days',investmentNote:'Solid cash-flow play in established neighborhood; strong rental demand.'},
-    {address:'78 Maple Terrace',city:query+' 06905',price:625000,beds:4,baths:2.5,sqft:1820,type:'Single Family',yearBuilt:1978,estimatedRent:3900,propertyTax:9400,hoa:0,daysOnMarket:14,status:'Active',highlights:'Large yard, finished basement, near train',assessedValue:544000,lastSalePrice:498000,lastSaleDate:'2020-07-22',lotSize:'0.35 acres',walkScore:74,schoolRating:8,neighborhood:'Tree-lined street, walkable to commuter rail',comparableSales:'4 comps sold $595–650k past 6 months',investmentNote:'Premium location near transit boosts long-term appreciation.'},
-    {address:'319 Commerce St, Unit 2',city:query+' 06901',price:349000,beds:2,baths:1,sqft:980,type:'Condo',yearBuilt:1999,estimatedRent:2400,propertyTax:4800,hoa:380,daysOnMarket:3,status:'Active',highlights:'Low maintenance, in-unit laundry, elevator building',assessedValue:298000,lastSalePrice:275000,lastSaleDate:'2019-11-05',lotSize:'N/A',walkScore:88,schoolRating:6,neighborhood:'Downtown core, walkable to shops and dining',comparableSales:'2 similar units sold $330–360k this quarter',investmentNote:'High walkability supports strong rental pool; watch HOA.'},
-    {address:'55 Harbor View Rd',city:query+' 06902',price:875000,beds:4,baths:3,sqft:2640,type:'Single Family',yearBuilt:1988,estimatedRent:5200,propertyTax:13200,hoa:0,daysOnMarket:21,status:'Active',highlights:'Water views, renovated throughout, large deck',assessedValue:762000,lastSalePrice:710000,lastSaleDate:'2018-06-30',lotSize:'0.48 acres',walkScore:55,schoolRating:9,neighborhood:'Waterfront community, highly sought-after area',comparableSales:'2 waterfront comps sold $840–920k past year',investmentNote:'Trophy asset; appreciation upside outweighs modest cap rate.'},
-    {address:'204-206 Grove Ave',city:query+' 06906',price:720000,beds:6,baths:3,sqft:2900,type:'Multi-Unit',yearBuilt:1955,estimatedRent:5400,propertyTax:10800,hoa:0,daysOnMarket:18,status:'Active',highlights:'2-unit, separate utilities, long-term tenants in place',assessedValue:634000,lastSalePrice:580000,lastSaleDate:'2020-02-11',lotSize:'0.18 acres',walkScore:71,schoolRating:6,neighborhood:'Mixed residential/commercial corridor',comparableSales:'Multi-units transacting at $240–260/sqft in area',investmentNote:'Best cash-flow option; in-place tenants reduce vacancy risk.'},
-    {address:'31 Prospect Hill Ln',city:query+' 06903',price:415000,beds:3,baths:1.5,sqft:1260,type:'Single Family',yearBuilt:1957,estimatedRent:2800,propertyTax:6200,hoa:0,daysOnMarket:5,status:'Active',highlights:'Corner lot, detached studio, new roof 2022',assessedValue:358000,lastSalePrice:302000,lastSaleDate:'2017-09-18',lotSize:'0.29 acres',walkScore:58,schoolRating:7,neighborhood:'Established suburban neighborhood, good schools',comparableSales:'5 comps sold $395–440k past 90 days',investmentNote:'Value-add studio adds rental income; solid fundamentals.'},
+    {address:'142 Birchwood Dr',city:cityLabel+' 06902',price:489000,beds:3,baths:2,sqft:1380,type:'Single Family',yearBuilt:1965,estimatedRent:3100,propertyTax:7200,hoa:0,daysOnMarket:8,status:'Active',highlights:'Updated kitchen, hardwood floors, 2-car garage',assessedValue:421000,lastSalePrice:362000,lastSaleDate:'2021-03-14',lotSize:'0.22 acres',walkScore:62,schoolRating:7,neighborhood:'Quiet residential neighborhood near park',comparableSales:'3 similar sold $470–510k last 90 days',investmentNote:'Solid cash-flow play in established neighborhood; strong rental demand.'},
+    {address:'78 Maple Terrace',city:cityLabel+' 06905',price:625000,beds:4,baths:2.5,sqft:1820,type:'Single Family',yearBuilt:1978,estimatedRent:3900,propertyTax:9400,hoa:0,daysOnMarket:14,status:'Active',highlights:'Large yard, finished basement, near train',assessedValue:544000,lastSalePrice:498000,lastSaleDate:'2020-07-22',lotSize:'0.35 acres',walkScore:74,schoolRating:8,neighborhood:'Tree-lined street, walkable to commuter rail',comparableSales:'4 comps sold $595–650k past 6 months',investmentNote:'Premium location near transit boosts long-term appreciation.'},
+    {address:'319 Commerce St, Unit 2',city:cityLabel+' 06901',price:349000,beds:2,baths:1,sqft:980,type:'Condo',yearBuilt:1999,estimatedRent:2400,propertyTax:4800,hoa:380,daysOnMarket:3,status:'Active',highlights:'Low maintenance, in-unit laundry, elevator building',assessedValue:298000,lastSalePrice:275000,lastSaleDate:'2019-11-05',lotSize:'N/A',walkScore:88,schoolRating:6,neighborhood:'Downtown core, walkable to shops and dining',comparableSales:'2 similar units sold $330–360k this quarter',investmentNote:'High walkability supports strong rental pool; watch HOA.'},
+    {address:'55 Harbor View Rd',city:cityLabel+' 06902',price:875000,beds:4,baths:3,sqft:2640,type:'Single Family',yearBuilt:1988,estimatedRent:5200,propertyTax:13200,hoa:0,daysOnMarket:21,status:'Active',highlights:'Water views, renovated throughout, large deck',assessedValue:762000,lastSalePrice:710000,lastSaleDate:'2018-06-30',lotSize:'0.48 acres',walkScore:55,schoolRating:9,neighborhood:'Waterfront community, highly sought-after area',comparableSales:'2 waterfront comps sold $840–920k past year',investmentNote:'Trophy asset; appreciation upside outweighs modest cap rate.'},
+    {address:'204-206 Grove Ave',city:cityLabel+' 06906',price:720000,beds:6,baths:3,sqft:2900,type:'Multi-Unit',yearBuilt:1955,estimatedRent:5400,propertyTax:10800,hoa:0,daysOnMarket:18,status:'Active',highlights:'2-unit, separate utilities, long-term tenants in place',assessedValue:634000,lastSalePrice:580000,lastSaleDate:'2020-02-11',lotSize:'0.18 acres',walkScore:71,schoolRating:6,neighborhood:'Mixed residential/commercial corridor',comparableSales:'Multi-units transacting at $240–260/sqft in area',investmentNote:'Best cash-flow option; in-place tenants reduce vacancy risk.'},
+    {address:'31 Prospect Hill Ln',city:cityLabel+' 06903',price:415000,beds:3,baths:1.5,sqft:1260,type:'Single Family',yearBuilt:1957,estimatedRent:2800,propertyTax:6200,hoa:0,daysOnMarket:5,status:'Active',highlights:'Corner lot, detached studio, new roof 2022',assessedValue:358000,lastSalePrice:302000,lastSaleDate:'2017-09-18',lotSize:'0.29 acres',walkScore:58,schoolRating:7,neighborhood:'Established suburban neighborhood, good schools',comparableSales:'5 comps sold $395–440k past 90 days',investmentNote:'Value-add studio adds rental income; solid fundamentals.'},
   ];
 }
 
