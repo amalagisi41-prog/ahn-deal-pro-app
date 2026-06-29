@@ -2954,7 +2954,7 @@ function renderSearchMap(listings){
     if(!container) return;
 
     if(!srchMapInstance) {
-      srchMapInstance = L.map(container, {zoomControl:false,attributionControl:false}).setView([41.1,−72.9],10);
+      srchMapInstance = L.map(container, {zoomControl:false,attributionControl:false}).setView([41.1,-72.9],10);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(srchMapInstance);
       L.control.zoom({position:'topright'}).addTo(srchMapInstance);
     } else {
@@ -3091,10 +3091,8 @@ function loadIntoAnalyzer(idx){
   // Initialize mortgage calculator (Phase 7)
   const downPayment = Math.round(l.price * 0.25);
   const loanAmount = l.price - downPayment;
-  document.getElementById('mc-loan').value = loanAmount;
-  document.getElementById('mc-rate').value = '7.25';
-  document.getElementById('mc-term').value = '30';
-  document.getElementById('mortgage-section').style.display = 'block';
+  const mcLoan=document.getElementById('mc-loan');if(mcLoan)mcLoan.value=loanAmount;
+  const ms=document.getElementById('mortgage-section');if(ms)ms.style.display='block';
   calcMortgage();
   cLTL();
   // Load comparable properties (Phase 5) and photos (Phase 6)
