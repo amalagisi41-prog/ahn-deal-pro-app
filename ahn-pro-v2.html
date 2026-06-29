@@ -2558,13 +2558,18 @@ Requirements: use realistic CT street names and ZIP codes. Include accurate lat/
 
   try {
     setStatusMsg('Claude is analyzing…','Processing investment metrics for each property');
-    const apiKey = document.getElementById('set-claude-key')?.value.trim();
+    const apiKey = (document.getElementById('set-claude-key')?.value||'').trim();
     if(!apiKey){
-      setStatusMsg('No Claude API key configured. Showing sample property data.','Enter your Anthropic key in Settings for full AI search.');
       const fallback = getFallbackListings(raw).map(l=>scoreListingFull(l));
       searchResults = fallback;
       renderResults(fallback);
       document.getElementById('srch-status').style.display='none';
+      // Show a dismissible banner above results
+      const banner = document.createElement('div');
+      banner.style.cssText='background:rgba(240,180,41,0.12);border:1px solid rgba(240,180,41,0.3);border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:0.72rem;color:var(--amber);display:flex;justify-content:space-between;align-items:center';
+      banner.innerHTML='<span>⚠ Sample data shown — enter your Claude API key in <strong>Settings</strong> for live AI analysis</span><button onclick="this.parentNode.remove()" style="background:none;border:none;color:var(--amber);font-size:1rem;cursor:pointer;padding:0 0 0 10px">×</button>';
+      const results = document.getElementById('srch-results');
+      results.insertBefore(banner, results.firstChild);
       return;
     }
     const resp = await fetch('https://api.anthropic.com/v1/messages',{
@@ -2608,11 +2613,14 @@ Requirements: use realistic CT street names and ZIP codes. Include accurate lat/
     }
   } catch(err){
     console.error('Search error:',err);
-    searchResults = getFallbackListings(raw).map(l=>scoreListingFull(l));
-    renderResults(searchResults);
-    backgroundEnrichProperties(searchResults);
+    try{
+      searchResults = getFallbackListings(raw).map(l=>scoreListingFull(l));
+      renderResults(searchResults);
+    } catch(e2){
+      document.getElementById('srch-results').innerHTML='<div style="text-align:center;padding:32px;color:var(--muted);font-size:0.8rem">Search failed. Please try again.</div>';
+    }
   }
-  document.getElementById('srch-status').style.display='none';
+  try{ document.getElementById('srch-status').style.display='none'; } catch(e){}
 }
 
 function scoreListingFull(l){
@@ -3035,6 +3043,7 @@ function toggleAmort(){
 async function displayPhotosForProperty(property){
   const photosSection = document.getElementById('photos-section');
   const photosGallery = document.getElementById('photos-gallery');
+  if(!photosSection || !photosGallery) return;
 
   if(!property.address || !property.city) {
     photosSection.style.display = 'none';
@@ -3084,6 +3093,7 @@ function renderCompsCard(comp){
 async function displayCompsForProperty(property){
   const compsSection = document.getElementById('comps-section');
   const compsList = document.getElementById('comps-list');
+  if(!compsSection || !compsList) return;
 
   if(!property.address || !property.city) {
     compsSection.style.display = 'none';
@@ -3101,6 +3111,10 @@ async function displayCompsForProperty(property){
 }
 
 function renderResults(listings){
+  if(!listings || listings.length === 0){
+    document.getElementById('srch-results').innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);font-size:0.8rem">No results found. Try a different search.</div>';
+    return;
+  }
   const sorted = [...listings].sort((a,b)=>{
     if(sortBy==='cap') return b.cap-a.cap;
     if(sortBy==='cf') return b.mcf-a.mcf;
@@ -3108,9 +3122,10 @@ function renderResults(listings){
     if(sortBy==='roi') return b.coc-a.coc;
     return 0;
   });
-  document.getElementById('srch-results').innerHTML = sorted.map((l,i)=>renderListingCard(l,i)).join('');
+  const cards = sorted.map((l,i)=>{ try{ return renderListingCard(l,i); } catch(e){ console.error('Card render error:',e,l); return ''; } }).join('');
+  document.getElementById('srch-results').innerHTML = cards;
   // Show inline map with pins for all results
-  renderSearchMap(sorted);
+  try{ renderSearchMap(sorted); } catch(e){ console.error('Map render error:',e); }
 }
 
 let srchMapInstance = null;
