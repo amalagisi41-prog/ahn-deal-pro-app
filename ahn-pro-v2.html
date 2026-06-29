@@ -2226,8 +2226,9 @@ function setStatusMsg(msg, sub){
 }
 
 function initSearch(){
-  if(!document.getElementById('srch-results').innerHTML){
-    document.getElementById('srch-empty').style.display='block';
+  const empty = document.getElementById('srch-empty');
+  if(empty && !document.getElementById('srch-results').innerHTML){
+    empty.style.display='block';
   }
 }
 
@@ -2448,7 +2449,8 @@ async function runSearch(){
   const priceFilter = parseInt(document.getElementById('sf-price').value)||0;
   const bedsFilter = parseInt(document.getElementById('sf-beds').value)||0;
 
-  document.getElementById('srch-empty').style.display='none';
+  const srchEmpty = document.getElementById('srch-empty');
+  if(srchEmpty) srchEmpty.style.display='none';
   document.getElementById('srch-status').style.display='block';
   document.getElementById('srch-results').innerHTML='';
 
