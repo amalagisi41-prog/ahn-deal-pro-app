@@ -97,6 +97,14 @@ body{font-family:"Inter",-apple-system,sans-serif;background:var(--navy);color:v
 .v-div{height:1px;background:var(--border);margin:13px 0}
 .v-detail{font-size:0.71rem;color:var(--muted);line-height:1.6}
 
+/* ── COMPARABLE CARDS ── */
+.comp-card{background:var(--card2);border:1px solid var(--border);border-radius:var(--r2);padding:12px;font-size:0.75rem}
+.comp-addr{font-weight:600;color:var(--off);margin-bottom:6px}
+.comp-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.comp-meta-item{display:flex;flex-direction:column}
+.comp-meta-lbl{font-size:0.62rem;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:0.02em;margin-bottom:2px}
+.comp-meta-val{font-size:0.82rem;color:var(--white);font-weight:600}
+
 /* ── KPI ROW ── */
 .krow{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px}
 .krow.c3{grid-template-columns:repeat(3,1fr)}
@@ -568,6 +576,14 @@ input[type=hidden]{display:none}
     </div>
     <div class="v-div"></div>
     <div class="v-detail" id="v-detail">Enter your numbers to see the deal analysis.</div>
+  </div>
+
+  <!-- COMPARABLE SALES (Phase 5) -->
+  <div id="comps-section" style="display:none">
+    <div style="margin-bottom:12px">
+      <div style="font-weight:700;font-size:0.85rem;color:var(--off);margin-bottom:10px;letter-spacing:0.03em">MARKET COMPS</div>
+      <div id="comps-list" style="display:grid;gap:10px"></div>
+    </div>
   </div>
 
   <!-- LTL INPUTS -->
@@ -2433,6 +2449,129 @@ function backgroundEnrichProperties(listings){
   });
 }
 
+/* ══════════════════════════════════════
+   COMPARABLE PROPERTIES (Phase 5)
+══════════════════════════════════════ */
+let compsCache = {};
+
+function generateCompsPrompt(property){
+  return `Generate 3 realistic comparable sales for this property. Consider market trends, property type, and location.
+
+Subject Property: ${property.address}, ${property.city}
+Type: ${property.type || 'Residential'}
+Price: $${property.price.toLocaleString()}
+Beds: ${property.beds}, Baths: ${property.baths}, Sqft: ${property.sqft}
+Year Built: ${property.yearBuilt || 'unknown'}
+
+Return ONLY valid JSON array (no markdown):
+[
+  {
+    "address": "street address, city state",
+    "price": sale_price_number,
+    "beds": number,
+    "baths": number,
+    "sqft": number,
+    "saleDate": "YYYY-MM-DD",
+    "daysOnMarket": number,
+    "pricePerSqft": number,
+    "status": "Sold"
+  }
+]
+
+Use realistic 2025 Connecticut market data. Vary prices ±15% from subject, similar beds/baths within 1 unit, nearby neighborhoods.`;
+}
+
+async function generateComparableProperties(property){
+  const cacheKey = `${property.address}_${property.city}_comps`.toLowerCase();
+  if(compsCache[cacheKey] && Date.now() - compsCache[cacheKey].ts < 86400000){
+    return compsCache[cacheKey].data;
+  }
+
+  try{
+    const apiKey = document.getElementById('set-claude-key')?.value;
+    if(!apiKey) return [];
+
+    const prompt = generateCompsPrompt(property);
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-1-20250805',
+        max_tokens: 800,
+        system: 'You are a real estate market analyst. Return ONLY valid JSON (no markdown, no explanations).',
+        messages: [{role: 'user', content: prompt}]
+      })
+    });
+
+    if(!resp.ok) return [];
+    const data = await resp.json();
+    const text = data.content[0].text;
+
+    try{
+      const comps = JSON.parse(text);
+      const valid = Array.isArray(comps) ? comps.filter(c => c.address && c.price && c.saleDate) : [];
+      compsCache[cacheKey] = {data: valid, ts: Date.now()};
+      return valid;
+    }catch{
+      return [];
+    }
+  }catch{
+    return [];
+  }
+}
+
+function renderCompsCard(comp){
+  return `
+    <div class="comp-card">
+      <div class="comp-addr">📍 ${comp.address}</div>
+      <div class="comp-meta">
+        <div class="comp-meta-item">
+          <div class="comp-meta-lbl">Price</div>
+          <div class="comp-meta-val">$${comp.price.toLocaleString()}</div>
+        </div>
+        <div class="comp-meta-item">
+          <div class="comp-meta-lbl">Beds / Baths</div>
+          <div class="comp-meta-val">${comp.beds} / ${comp.baths}</div>
+        </div>
+        <div class="comp-meta-item">
+          <div class="comp-meta-lbl">Sqft</div>
+          <div class="comp-meta-val">${comp.sqft.toLocaleString()}</div>
+        </div>
+        <div class="comp-meta-item">
+          <div class="comp-meta-lbl">Price/Sqft</div>
+          <div class="comp-meta-val">$${comp.pricePerSqft.toFixed(0)}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;font-size:0.65rem;color:var(--muted)">
+        <span>📅 ${comp.saleDate}</span>
+        <span>⏱️ ${comp.daysOnMarket} DOM</span>
+      </div>
+    </div>
+  `;
+}
+
+async function displayCompsForProperty(property){
+  const compsSection = document.getElementById('comps-section');
+  const compsList = document.getElementById('comps-list');
+
+  if(!property.address || !property.city) {
+    compsSection.style.display = 'none';
+    return;
+  }
+
+  const comps = await generateComparableProperties(property);
+
+  if(comps.length > 0) {
+    compsList.innerHTML = comps.map(c => renderCompsCard(c)).join('');
+    compsSection.style.display = 'block';
+  } else {
+    compsSection.style.display = 'none';
+  }
+}
+
 function renderResults(listings){
   const sorted = [...listings].sort((a,b)=>{
     if(sortBy==='cap') return b.cap-a.cap;
@@ -2531,6 +2670,8 @@ function loadIntoAnalyzer(idx){
   // Set address for presentation
   document.getElementById('pres-addr').value = l.address+', '+l.city;
   cLTL();
+  // Load comparable properties (Phase 5)
+  displayCompsForProperty(l);
   goTab('analyze');
 }
 
