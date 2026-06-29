@@ -2149,6 +2149,8 @@ function quickSearch(q){ document.getElementById('srch-input').value=q; detectSe
 let autocompleteCache = {};
 let autocompleteTimeout;
 let lastAutocompleteQuery = '';
+let lastSelectedLat = null;
+let lastSelectedLng = null;
 
 async function fetchAddressSuggestions(){
   const input = document.getElementById('srch-input');
@@ -2193,8 +2195,10 @@ function renderAutocompleteSuggestions(suggestions){
     const state = s.address?.state || '';
     const zip = s.address?.postcode || '';
     const label = [displayName, city, state, zip].filter(x=>x).join(', ');
+    const lat = parseFloat(s.lat)||0;
+    const lng = parseFloat(s.lon)||0;
 
-    return `<div style="padding:10px 15px;border-bottom:1px solid var(--border);cursor:pointer;font-size:0.78rem;color:var(--off);transition:background 0.15s" onclick="selectAutocompleteSuggestion('${label.replace(/'/g, "\\'")}')">
+    return `<div style="padding:10px 15px;border-bottom:1px solid var(--border);cursor:pointer;font-size:0.78rem;color:var(--off);transition:background 0.15s" onclick="selectAutocompleteSuggestion('${label.replace(/'/g, "\\'")}',${lat},${lng})">
       <div style="font-weight:600;margin-bottom:2px">${displayName}</div>
       <div style="font-size:0.68rem;color:var(--muted)">${[city, state, zip].filter(x=>x).join(' ')}</div>
     </div>`;
@@ -2203,13 +2207,15 @@ function renderAutocompleteSuggestions(suggestions){
   dropdown.style.display = 'block';
 }
 
-function selectAutocompleteSuggestion(label){
+function selectAutocompleteSuggestion(label, lat, lng){
   const input = document.getElementById('srch-input');
   // If suggestion has no house number but user typed one, prepend it
   const typed = input.value.trim();
   const houseMatch = typed.match(/^(\d+)\s+/);
   const labelHasNumber = /^\d+\s/.test(label);
   input.value = (houseMatch && !labelHasNumber) ? houseMatch[1] + ' ' + label : label;
+  lastSelectedLat = lat || null;
+  lastSelectedLng = lng || null;
   closeAutocomplete();
   detectSearchMode();
   runSearch();
@@ -2218,6 +2224,18 @@ function selectAutocompleteSuggestion(label){
 function closeAutocomplete(){
   document.getElementById('srch-autocomplete').style.display = 'none';
   lastAutocompleteQuery = '';
+}
+
+function showNoKeyBanner(){
+  const results = document.getElementById('srch-results');
+  if(!results) return;
+  const existing = results.querySelector('.no-key-banner');
+  if(existing) return;
+  const banner = document.createElement('div');
+  banner.className = 'no-key-banner';
+  banner.style.cssText='background:rgba(240,180,41,0.12);border:1px solid rgba(240,180,41,0.3);border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:0.72rem;color:var(--amber);display:flex;justify-content:space-between;align-items:center';
+  banner.innerHTML='<span>⚠ Estimated data — enter your Claude API key in <strong>Settings</strong> for live AI analysis</span><button onclick="this.parentNode.remove()" style="background:none;border:none;color:var(--amber);font-size:1rem;cursor:pointer;padding:0 0 0 10px">×</button>';
+  results.insertBefore(banner, results.firstChild);
 }
 
 function setStatusMsg(msg, sub){
@@ -2560,16 +2578,33 @@ Requirements: use realistic CT street names and ZIP codes. Include accurate lat/
     setStatusMsg('Claude is analyzing…','Processing investment metrics for each property');
     const apiKey = (document.getElementById('set-claude-key')?.value||'').trim();
     if(!apiKey){
+      // For address mode: synthesize a record for the actual queried address
+      if(addressMode){
+        const parts = raw.split(',');
+        const street = parts[0].trim();
+        const cityState = parts.slice(1).join(',').trim() || 'Stamford, CT';
+        const ref = getFallbackListings(raw)[0]; // borrow financial profile from ref
+        const synthetic = scoreListingFull({
+          address: street, city: cityState,
+          price: ref.price, beds: ref.beds, baths: ref.baths, sqft: ref.sqft,
+          type: ref.type, yearBuilt: ref.yearBuilt,
+          estimatedRent: ref.estimatedRent, propertyTax: ref.propertyTax, hoa: 0,
+          daysOnMarket: 0, status: 'Address Lookup',
+          highlights: 'Estimated investment profile — add your Claude API key in Settings for a real AI analysis.',
+          assessedValue: Math.round(ref.price*0.85),
+          lat: lastSelectedLat||null, lng: lastSelectedLng||null
+        });
+        searchResults = [synthetic];
+        document.getElementById('srch-status').style.display='none';
+        renderResults([synthetic]);
+        showNoKeyBanner();
+        return;
+      }
       const fallback = getFallbackListings(raw).map(l=>scoreListingFull(l));
       searchResults = fallback;
       renderResults(fallback);
       document.getElementById('srch-status').style.display='none';
-      // Show a dismissible banner above results
-      const banner = document.createElement('div');
-      banner.style.cssText='background:rgba(240,180,41,0.12);border:1px solid rgba(240,180,41,0.3);border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:0.72rem;color:var(--amber);display:flex;justify-content:space-between;align-items:center';
-      banner.innerHTML='<span>⚠ Sample data shown — enter your Claude API key in <strong>Settings</strong> for live AI analysis</span><button onclick="this.parentNode.remove()" style="background:none;border:none;color:var(--amber);font-size:1rem;cursor:pointer;padding:0 0 0 10px">×</button>';
-      const results = document.getElementById('srch-results');
-      results.insertBefore(banner, results.firstChild);
+      showNoKeyBanner();
       return;
     }
     const resp = await fetch('https://api.anthropic.com/v1/messages',{
@@ -3184,16 +3219,30 @@ function renderListingCard(l, idx){
       ${l.rentComps ? `<div style="font-size:.65rem;color:var(--muted);margin-top:3px">🏠 ${l.rentComps}</div>` : ''}
       ${l.schoolDistrict ? `<div style="font-size:.65rem;color:var(--muted);margin-top:3px">🎓 ${l.schoolDistrict}</div>` : ''}
     </div>` : '';
-  // Property photo: Google Street View if key set, else OSM static map, else emoji
+  // Property photo: Google Street View > OSM static map (lat/lng) > styled placeholder
   const gKey = document.getElementById('set-google-key')?.value?.trim();
   const addrEnc = encodeURIComponent((l.address||'')+', '+(l.city||''));
-  const photoHtml = gKey
-    ? `<img src="https://maps.googleapis.com/maps/api/streetview?size=600x300&location=${addrEnc}&key=${gKey}&source=outdoor"
+  const typeIcon = l.type==='Multi-Unit'?'🏢':l.type==='Condo'?'🏙️':l.type==='Townhouse'?'🏘️':'🏠';
+  let photoHtml;
+  if(gKey){
+    photoHtml = `<img src="https://maps.googleapis.com/maps/api/streetview?size=600x300&location=${addrEnc}&key=${gKey}&source=outdoor"
          style="width:100%;height:160px;object-fit:cover;display:block"
          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
          alt="Street view">
-       <div class="lc-photo-placeholder" style="display:none">🏠</div>`
-    : `<div class="lc-photo-placeholder">🏠</div>`;
+       <div class="lc-photo-placeholder" style="display:none">${typeIcon}</div>`;
+  } else if(l.lat && l.lng){
+    const osmUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${l.lat},${l.lng}&zoom=17&size=600x200&markers=${l.lat},${l.lng},red-pushpin`;
+    photoHtml = `<img src="${osmUrl}" style="width:100%;height:160px;object-fit:cover;display:block;background:var(--card2)"
+         onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="Map">
+       <div class="lc-photo-placeholder" style="display:none">${typeIcon}</div>`;
+  } else {
+    const colors = ['#1a2744','#162039','#1c2d50'];
+    const bg = colors[idx % colors.length];
+    photoHtml = `<div style="width:100%;height:160px;background:linear-gradient(135deg,${bg} 0%,#0f1f38 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px">
+      <div style="font-size:2.4rem">${typeIcon}</div>
+      <div style="font-size:0.62rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.3)">${l.type||'Residential'}</div>
+    </div>`;
+  }
 
   return `
 <div class="listing-card" id="lc-${idx}">
