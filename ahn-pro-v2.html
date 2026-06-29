@@ -536,7 +536,7 @@ input[type=hidden]{display:none}
 <div class="hdr">
   <div class="hdr-left">
     <div class="hdr-title" id="page-title">Analyze</div>
-    <div class="hdr-sub" id="page-sub">Deal Analyzer Pro</div>
+    <div class="hdr-sub" id="page-sub">Deal Analyzer Pro <span style="opacity:0.45;font-size:0.55rem">v2.4</span></div>
   </div>
   <a class="hdr-brand" href="./" onclick="goHome();return false;">
     <div class="hdr-icon"><svg width="14" height="14" viewBox="0 0 22 22" fill="none"><path d="M11 2L2 8.5V20h6v-6h6v6h6V8.5L11 2Z" fill="white" opacity="0.9"/></svg></div>
@@ -670,17 +670,20 @@ input[type=hidden]{display:none}
   <!-- Search Results -->
   <div id="srch-results"></div>
 
-  <!-- Divider between search and manual analyzer -->
-  <div id="analyzer-divider" style="display:flex;align-items:center;gap:10px;margin:16px 0 12px">
-    <div style="flex:1;height:1px;background:var(--border2)"></div>
-    <span style="font-size:0.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;white-space:nowrap">or analyze manually</span>
-    <div style="flex:1;height:1px;background:var(--border2)"></div>
+  <!-- Divider / Manual Analyzer Toggle -->
+  <div id="analyzer-divider" style="margin:16px 0 0">
+    <button id="manual-analyzer-toggle" onclick="toggleManualAnalyzer()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 16px;background:var(--card);border:1px solid var(--border2);border-radius:var(--r);font-family:inherit;font-size:0.72rem;font-weight:700;color:var(--muted);cursor:pointer;letter-spacing:0.04em;-webkit-tap-highlight-color:transparent">
+      <span>⊕ Analyze a Deal Manually</span>
+      <span id="manual-analyzer-chevron" style="font-size:0.65rem;transition:transform 0.2s">▾</span>
+    </button>
   </div>
 
-  <!-- ANALYZER (Buy & Hold / Fix & Flip) -->
-  <div class="tab-strip">
-    <button class="tsb on" id="ts-ltl" onclick="setAnalyzeMode('ltl')">Buy &amp; Hold</button>
-    <button class="tsb" id="ts-flip" onclick="setAnalyzeMode('flip')">Fix &amp; Flip</button>
+  <!-- MANUAL ANALYZER PANEL (collapsed by default) -->
+  <div id="manual-analyzer-panel" style="display:none">
+  <!-- Mode selector: Buy & Hold / Fix & Flip -->
+  <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+    <button class="tsb on" id="ts-ltl" onclick="setAnalyzeMode('ltl')" style="padding:12px;border-radius:10px;font-size:0.78rem;font-weight:800">🏠 Buy &amp; Hold</button>
+    <button class="tsb" id="ts-flip" onclick="setAnalyzeMode('flip')" style="padding:12px;border-radius:10px;font-size:0.78rem;font-weight:800">🔨 Fix &amp; Flip</button>
   </div>
 
   <!-- VERDICT -->
@@ -848,10 +851,12 @@ input[type=hidden]{display:none}
     </div>
   </div><!-- /flip-panel -->
 
-  <a class="cta" href="https://artisanhomenetwork.com" target="_blank">
+  <a class="cta" href="https://artisanhomenetwork.com" target="_blank" style="margin-top:12px">
     <div><div class="cta-t">Work with Artisan Home Network</div><div class="cta-s">Premium real estate services for investors &amp; brokers</div></div>
     <div class="cta-arr">→</div>
   </a>
+  </div><!-- /manual-analyzer-panel -->
+
 </div><!-- /tab-analyze -->
 
 <!-- ══════════════════ COMPARE TAB ══════════════════ -->
@@ -1259,6 +1264,17 @@ function addPropAndOpenPortfolio(){goTab('portfolio'); openAddPropertyForm();}
 
 /* ── ANALYZE MODE ── */
 let analyzeMode='ltl';
+function toggleManualAnalyzer(){
+  const panel = document.getElementById('manual-analyzer-panel');
+  const chev = document.getElementById('manual-analyzer-chevron');
+  const btn = document.getElementById('manual-analyzer-toggle');
+  const open = panel.style.display === 'none';
+  panel.style.display = open ? 'block' : 'none';
+  chev.style.transform = open ? 'rotate(180deg)' : '';
+  btn.style.color = open ? 'var(--teal)' : '';
+  btn.style.borderColor = open ? 'rgba(46,207,173,0.3)' : '';
+  if(open) cLTL();
+}
 function setAnalyzeMode(m){
   analyzeMode=m;
   document.getElementById('ts-ltl').classList.toggle('on',m==='ltl');
@@ -3240,10 +3256,14 @@ function loadIntoAnalyzer(idx){
   const mcDown=document.getElementById('mc-down-pct');if(mcDown)mcDown.value=25;
   calcMortgage();
   cLTL();
+  // Auto-open manual analyzer panel
+  const panel=document.getElementById('manual-analyzer-panel');
+  if(panel&&panel.style.display==='none') toggleManualAnalyzer();
   // Load comparable properties (Phase 5) and photos (Phase 6)
   displayCompsForProperty(l);
   displayPhotosForProperty(l);
   goTab('analyze');
+  setTimeout(()=>{ panel?.scrollIntoView({behavior:'smooth',block:'start'}); },200);
 }
 
 function toggleSave(idx){
