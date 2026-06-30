@@ -1107,8 +1107,8 @@ input[type=hidden]{display:none}
         </div>
         <div style="font-size:0.72rem;color:var(--muted);line-height:1.6;margin-bottom:10px">Connect your <strong style="color:var(--off)">AnyProp</strong> credentials for real SmartMLS listing data — live prices, beds/baths/sqft, photos, days-on-market, and MLS# lookup. Get a free trial key at <strong style="color:var(--teal)">anyprop.com/developers.html</strong></div>
         <div style="display:flex;flex-direction:column;gap:7px">
-          <div class="exrow" style="padding:0;border:none"><span class="exlbl">AnyProp Client ID</span><input type="password" class="exinp" id="set-anyprop-id" placeholder="client_id..." style="width:180px"></div>
-          <div class="exrow" style="padding:0;border:none;margin-top:6px"><span class="exlbl">AnyProp Client Secret</span><input type="password" class="exinp" id="set-anyprop-secret" placeholder="client_secret..." style="width:180px"></div>
+          <div class="exrow" style="padding:0;border:none"><span class="exlbl">AnyProp Username</span><input type="text" class="exinp" id="set-anyprop-id" placeholder="your@email.com" autocomplete="off" style="width:180px"></div>
+          <div class="exrow" style="padding:0;border:none;margin-top:6px"><span class="exlbl">AnyProp Password</span><input type="password" class="exinp" id="set-anyprop-secret" placeholder="••••••••••••" style="width:180px"></div>
         </div>
         <div id="anyprop-status" style="margin-top:10px;font-size:0.65rem;color:var(--muted);min-height:16px"></div>
         <button onclick="testAnyPropConnection()" style="margin-top:8px;width:100%;padding:10px;border-radius:8px;border:1.5px solid rgba(46,207,173,0.35);background:rgba(46,207,173,0.08);font-family:inherit;font-size:0.76rem;font-weight:700;color:var(--teal);cursor:pointer;-webkit-tap-highlight-color:transparent">
@@ -2451,22 +2451,23 @@ Use realistic CT coordinates. Make rent ~0.7-1% of price.`
 let _anyPropToken = null;
 let _anyPropTokenExp = 0;
 
-async function anyPropGetToken(clientId, clientSecret) {
+async function anyPropGetToken(username, password) {
   if (_anyPropToken && Date.now() < _anyPropTokenExp) return _anyPropToken;
   const resp = await fetch('https://api.anyprop.com/v1/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ grant_type: 'client_credentials', client_id: clientId, client_secret: clientSecret })
+    body: new URLSearchParams({ username, password })
   });
   if (!resp.ok) throw new Error(`AnyProp auth failed: ${resp.status}`);
   const data = await resp.json();
   _anyPropToken = data.access_token;
-  _anyPropTokenExp = Date.now() + (data.expires_in || 3600) * 1000 - 60000;
+  // expires_in is 2592000 (30 days) — cache with 1hr safety margin
+  _anyPropTokenExp = Date.now() + (data.expires_in || 86400) * 1000 - 3600000;
   return _anyPropToken;
 }
 
-async function anyPropQuery(clientId, clientSecret, filter, expand) {
-  const token = await anyPropGetToken(clientId, clientSecret);
+async function anyPropQuery(username, password, filter, expand) {
+  const token = await anyPropGetToken(username, password);
   let url = `https://api.anyprop.com/v1/listings/data/Property?$filter=${encodeURIComponent(filter)}&$top=12`;
   if (expand) url += `&$expand=${expand}`;
   const resp = await fetch(url, { headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' } });
@@ -2521,18 +2522,25 @@ function anyPropToListing(p) {
 }
 
 async function testAnyPropConnection() {
-  const clientId = document.getElementById('set-anyprop-id')?.value.trim();
-  const clientSecret = document.getElementById('set-anyprop-secret')?.value.trim();
+  const username = document.getElementById('set-anyprop-id')?.value.trim();
+  const password = document.getElementById('set-anyprop-secret')?.value.trim();
   const statusEl = document.getElementById('anyprop-status');
-  if (!clientId || !clientSecret) {
-    if (statusEl) statusEl.innerHTML = '<span style="color:var(--amber)">⚠ Enter Client ID and Client Secret first</span>';
+  if (!username || !password) {
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--amber)">⚠ Enter your AnyProp username and password first</span>';
     return;
   }
-  if (statusEl) statusEl.innerHTML = '<span style="color:var(--muted)">Testing connection…</span>';
+  if (statusEl) statusEl.innerHTML = '<span style="color:var(--muted)">Authenticating…</span>';
   try {
     _anyPropToken = null; // force fresh token
-    const listings = await anyPropQuery(clientId, clientSecret, "StandardStatus eq 'Active' and StateOrProvince eq 'CT'", 'PreferredMedia');
-    if (statusEl) statusEl.innerHTML = `<span style="color:var(--teal)">✓ Connected — ${listings.length} sample listings received from SmartMLS</span>`;
+    // First verify auth works, then check which MLSes are available
+    const token = await anyPropGetToken(username, password);
+    const acctResp = await fetch('https://api.anyprop.com/v1/account/resources', {
+      headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+    });
+    const acctData = acctResp.ok ? await acctResp.json() : {};
+    const mlsList = acctData.resources?.listings?.map(m => m.originating_system_full_name || m.originating_system_name) || [];
+    const mlsLabel = mlsList.length ? mlsList.join(', ') : 'MLS data';
+    if (statusEl) statusEl.innerHTML = `<span style="color:var(--teal)">✓ Connected — access to: ${mlsLabel}</span>`;
   } catch(e) {
     if (statusEl) statusEl.innerHTML = `<span style="color:var(--red)">✗ ${e.message}</span>`;
   }
