@@ -1099,28 +1099,20 @@ input[type=hidden]{display:none}
       <div style="font-size:0.65rem;color:var(--muted);margin-top:4px;padding:0 2px">Google key enables Street View property photos. Get a free key at Google Cloud Console with Maps Static API enabled.</div>
       </div>
 
-      <!-- Live MLS Integration -->
+      <!-- Live MLS Integration — AnyProp -->
       <div style="padding:14px 15px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <span style="font-size:0.82rem;font-weight:700;color:var(--off)">Live MLS Integration</span>
-          <span style="font-size:0.6rem;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:var(--amber);background:rgba(240,180,41,0.12);padding:3px 9px;border-radius:20px">Pro · Coming Soon</span>
+          <span style="font-size:0.6rem;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:var(--teal);background:rgba(46,207,173,0.12);padding:3px 9px;border-radius:20px">AnyProp · Active</span>
         </div>
-        <div style="font-size:0.72rem;color:var(--muted);line-height:1.6;margin-bottom:10px">Connect your MLS API credentials for real-time listing data, live comps, and actual days-on-market. Available as a Pro tier upgrade.</div>
+        <div style="font-size:0.72rem;color:var(--muted);line-height:1.6;margin-bottom:10px">Connect your <strong style="color:var(--off)">AnyProp</strong> credentials for real SmartMLS listing data — live prices, beds/baths/sqft, photos, days-on-market, and MLS# lookup. Get a free trial key at <strong style="color:var(--teal)">anyprop.com/developers.html</strong></div>
         <div style="display:flex;flex-direction:column;gap:7px">
-          <div class="exrow" style="padding:0;border:none;opacity:0.5"><span class="exlbl">MLS Provider</span>
-            <select class="exinp" style="width:160px;cursor:not-allowed" disabled>
-              <option>SmartMLS (CT)</option>
-              <option>Spark API</option>
-              <option>RESO Web API</option>
-              <option>Bridge Interactive</option>
-              <option>Other</option>
-            </select>
-          </div>
-          <div class="exrow" style="padding:0;border:none;opacity:0.5"><span class="exlbl">API Key</span><input type="password" class="exinp" placeholder="••••••••••••••••" style="width:180px" disabled></div>
-          <div class="exrow" style="padding:0;border:none;opacity:0.5"><span class="exlbl">MLS Board ID</span><input type="text" class="exinp" placeholder="e.g. CTMLS" style="width:120px" disabled></div>
+          <div class="exrow" style="padding:0;border:none"><span class="exlbl">AnyProp Client ID</span><input type="password" class="exinp" id="set-anyprop-id" placeholder="client_id..." style="width:180px"></div>
+          <div class="exrow" style="padding:0;border:none;margin-top:6px"><span class="exlbl">AnyProp Client Secret</span><input type="password" class="exinp" id="set-anyprop-secret" placeholder="client_secret..." style="width:180px"></div>
         </div>
-        <button onclick="notifyMLS()" style="margin-top:12px;width:100%;padding:10px;border-radius:8px;border:1.5px solid rgba(240,180,41,0.35);background:rgba(240,180,41,0.08);font-family:inherit;font-size:0.76rem;font-weight:700;color:var(--amber);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.15s">
-          🔔 &nbsp;Notify me when Pro launches
+        <div id="anyprop-status" style="margin-top:10px;font-size:0.65rem;color:var(--muted);min-height:16px"></div>
+        <button onclick="testAnyPropConnection()" style="margin-top:8px;width:100%;padding:10px;border-radius:8px;border:1.5px solid rgba(46,207,173,0.35);background:rgba(46,207,173,0.08);font-family:inherit;font-size:0.76rem;font-weight:700;color:var(--teal);cursor:pointer;-webkit-tap-highlight-color:transparent">
+          🔌 &nbsp;Test Connection
         </button>
       </div>
 
@@ -1979,7 +1971,8 @@ function loadSettings(){
       'set-brand':s.brand,'set-agent':s.agent,'set-website':s.website,
       'set-license':s.license,'set-market':s.market,'set-rate':s.rate,
       'set-down':s.down,'set-vac':s.vac,'set-tax':s.tax,'set-appr':s.appr,
-      'set-client':s.client,'set-footer':s.footer,'set-claude-key':s.claudeKey
+      'set-client':s.client,'set-footer':s.footer,'set-claude-key':s.claudeKey,
+      'set-anyprop-id':s.anypropId,'set-anyprop-secret':s.anypropSecret
     };
     Object.entries(map).forEach(([id,val])=>{
       const el=document.getElementById(id);
@@ -2035,7 +2028,9 @@ function saveSettings(){
     appr: document.getElementById('set-appr')?.value||3,
     client: document.getElementById('set-client')?.value||'',
     footer: document.getElementById('set-footer')?.value||'',
-    claudeKey: document.getElementById('set-claude-key')?.value||''
+    claudeKey: document.getElementById('set-claude-key')?.value||'',
+    anypropId: document.getElementById('set-anyprop-id')?.value||'',
+    anypropSecret: document.getElementById('set-anyprop-secret')?.value||''
   };
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
 
@@ -2451,6 +2446,99 @@ Use realistic CT coordinates. Make rent ~0.7-1% of price.`
 }
 
 /* ══════════════════════════════════════
+   ANYPROP MLS INTEGRATION
+══════════════════════════════════════ */
+let _anyPropToken = null;
+let _anyPropTokenExp = 0;
+
+async function anyPropGetToken(clientId, clientSecret) {
+  if (_anyPropToken && Date.now() < _anyPropTokenExp) return _anyPropToken;
+  const resp = await fetch('https://api.anyprop.com/v1/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'client_credentials', client_id: clientId, client_secret: clientSecret })
+  });
+  if (!resp.ok) throw new Error(`AnyProp auth failed: ${resp.status}`);
+  const data = await resp.json();
+  _anyPropToken = data.access_token;
+  _anyPropTokenExp = Date.now() + (data.expires_in || 3600) * 1000 - 60000;
+  return _anyPropToken;
+}
+
+async function anyPropQuery(clientId, clientSecret, filter, expand) {
+  const token = await anyPropGetToken(clientId, clientSecret);
+  let url = `https://api.anyprop.com/v1/listings/data/Property?$filter=${encodeURIComponent(filter)}&$top=12`;
+  if (expand) url += `&$expand=${expand}`;
+  const resp = await fetch(url, { headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' } });
+  if (!resp.ok) throw new Error(`AnyProp query failed: ${resp.status}`);
+  const data = await resp.json();
+  return data.value || [];
+}
+
+function anyPropToListing(p) {
+  const media = p.PreferredMedia || p.Media || [];
+  const photoUrl = media[0]?.MediaURL || null;
+  const baths = p.BathroomsTotalInteger || ((p.BathroomsFull||0) + (p.BathroomsHalf||0)*0.5) || null;
+  const lotAcres = p.LotSizeSquareFeet ? (p.LotSizeSquareFeet / 43560).toFixed(2) + ' acres' : null;
+  const lat = parseFloat(p.anyprop_Latitude || p.Latitude) || null;
+  const lng = parseFloat(p.anyprop_Longitude || p.Longitude) || null;
+  const street = p.anyprop_StreetAddress || p.StreetNumber && p.StreetName ? `${p.StreetNumber||''} ${p.StreetName||''}`.trim() : p.UnparsedAddress||'';
+  const city = p.anyprop_City || p.City || '';
+  const state = p.anyprop_State || p.StateOrProvince || '';
+  const cityState = state ? `${city}, ${state} ${p.PostalCode||''}`.trim() : city;
+  const price = p.ListPrice || p.ClosePrice || 0;
+  const estimatedRent = Math.round(price * 0.0065); // ~0.65% rule for CT as fallback
+  const raw = {
+    mlsNumber: p.ListingId || null,
+    address: street,
+    city: cityState,
+    price,
+    beds: p.BedroomsTotal || null,
+    baths,
+    sqft: p.LivingArea || null,
+    type: p.PropertySubType || p.PropertyType || 'Residential',
+    yearBuilt: p.YearBuilt || p.YearBuiltEffective || null,
+    estimatedRent: p.anyprop_EstimatedRent || estimatedRent,
+    propertyTax: p.TaxAnnualAmount || Math.round(price * 0.016),
+    hoa: p.anyprop_AssociationFeeTotalMonthly || 0,
+    daysOnMarket: p.DaysOnMarket || 0,
+    status: p.StandardStatus || p.MlsStatus || 'Active',
+    highlights: p.PublicRemarks || '',
+    assessedValue: p.TaxAssessedValue || null,
+    lastSalePrice: p.ClosePrice || null,
+    lastSaleDate: p.CloseDate ? p.CloseDate.split('T')[0] : null,
+    lotSize: lotAcres,
+    walkScore: null,
+    schoolRating: null,
+    neighborhood: p.SubdivisionName || p.CountyOrParish || null,
+    comparableSales: null,
+    investmentNote: null,
+    lat, lng,
+    photoUrl,
+    mlsDisclaimer: p.OriginatingSystemName || null
+  };
+  return scoreListingFull(raw);
+}
+
+async function testAnyPropConnection() {
+  const clientId = document.getElementById('set-anyprop-id')?.value.trim();
+  const clientSecret = document.getElementById('set-anyprop-secret')?.value.trim();
+  const statusEl = document.getElementById('anyprop-status');
+  if (!clientId || !clientSecret) {
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--amber)">⚠ Enter Client ID and Client Secret first</span>';
+    return;
+  }
+  if (statusEl) statusEl.innerHTML = '<span style="color:var(--muted)">Testing connection…</span>';
+  try {
+    _anyPropToken = null; // force fresh token
+    const listings = await anyPropQuery(clientId, clientSecret, "StandardStatus eq 'Active' and StateOrProvince eq 'CT'", 'PreferredMedia');
+    if (statusEl) statusEl.innerHTML = `<span style="color:var(--teal)">✓ Connected — ${listings.length} sample listings received from SmartMLS</span>`;
+  } catch(e) {
+    if (statusEl) statusEl.innerHTML = `<span style="color:var(--red)">✗ ${e.message}</span>`;
+  }
+}
+
+/* ══════════════════════════════════════
    MAIN CLAUDE AI SEARCH
 ══════════════════════════════════════ */
 async function runSearch(){
@@ -2476,6 +2564,65 @@ async function runSearch(){
   const mlsMode = isMLS(raw);
   const addressMode = isAddress(raw);
   const mlsNum = raw.replace(/^(mls#?|#)?\s*/i,'').trim();
+
+  // ── AnyProp live MLS path ──
+  const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');
+  const apId = (document.getElementById('set-anyprop-id')?.value||settings.anypropId||'').trim();
+  const apSecret = (document.getElementById('set-anyprop-secret')?.value||settings.anypropSecret||'').trim();
+  if(apId && apSecret){
+    try{
+      setStatusMsg('Querying SmartMLS…','Fetching live listing data from AnyProp');
+      let filter, listings;
+      if(mlsMode){
+        filter = `ListingId eq '${mlsNum}'`;
+      } else if(addressMode){
+        filter = `search.text(RawAddressSearchText,'${raw}',1000)`;
+      } else {
+        // Market search — city/zip/keyword
+        const parts = raw.split(',');
+        const city = parts[0].trim();
+        const isZip = /^\d{5}$/.test(city);
+        filter = isZip
+          ? `PostalCode eq '${city}' and StandardStatus eq 'Active'`
+          : `search.text(RawAddressSearchText,'${city}') and StandardStatus eq 'Active'`;
+        if(priceFilter) filter += ` and ListPrice le ${priceFilter}`;
+        if(bedsFilter)  filter += ` and BedroomsTotal ge ${bedsFilter}`;
+        if(typeFilter && typeFilter !== 'all'){
+          const typeMap = {'Single Family':'Single Family Residence','Multi-Unit':'Residential Income','Condo':'Condominium','Townhouse':'Townhouse'};
+          const mapped = typeMap[typeFilter];
+          if(mapped) filter += ` and PropertySubType eq '${mapped}'`;
+        }
+      }
+      const raw_listings = await anyPropQuery(apId, apSecret, filter, 'PreferredMedia');
+      if(raw_listings.length === 0){
+        setStatusMsg('No MLS results','No active listings found — try a different search');
+        document.getElementById('srch-status').style.display='none';
+        document.getElementById('srch-results').innerHTML='<div style="text-align:center;padding:30px;color:var(--muted);font-size:0.8rem">No listings found in SmartMLS for that search. Try a city, ZIP, or MLS#.</div>';
+        return;
+      }
+      listings = raw_listings.map(anyPropToListing);
+      searchResults = listings;
+      document.getElementById('srch-status').style.display='none';
+      renderResults(listings);
+      // Show MLS disclaimer if present
+      const disclaimer = raw_listings[0]?.OriginatingSystemName;
+      if(disclaimer){
+        const results = document.getElementById('srch-results');
+        if(results && !results.querySelector('.mls-disclaimer')){
+          const d = document.createElement('div');
+          d.className='mls-disclaimer';
+          d.style.cssText='font-size:0.58rem;color:var(--muted);text-align:center;padding:8px 14px;border-top:1px solid var(--border);margin-top:8px';
+          d.textContent=`Live data from ${disclaimer} via AnyProp · Subject to MLS rules`;
+          results.appendChild(d);
+        }
+      }
+      return;
+    } catch(e){
+      console.error('AnyProp error:', e);
+      setStatusMsg('MLS connection issue','Falling back to AI analysis…');
+      await new Promise(r=>setTimeout(r,800));
+    }
+  }
 
   let prompt, parseMode;
 
@@ -3253,7 +3400,9 @@ function renderListingCard(l, idx){
   const gKey = (document.getElementById('set-google-key')?.value||'').trim();
   const addrEnc = encodeURIComponent((l.address||'')+', '+(l.city||''));
   let photoHtml;
-  if(gKey){
+  if(l.photoUrl){
+    photoHtml = `<img src="${l.photoUrl}" style="width:100%;height:145px;object-fit:cover;display:block" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="Property photo"><div style="display:none;width:100%;height:145px;background:#1a2744;align-items:center;justify-content:center;font-size:2.2rem">${typeIcon}</div>`;
+  } else if(gKey){
     photoHtml = `<img src="https://maps.googleapis.com/maps/api/streetview?size=600x280&location=${addrEnc}&key=${gKey}&source=outdoor" style="width:100%;height:145px;object-fit:cover;display:block" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="Street view"><div style="display:none;width:100%;height:145px;background:#1a2744;align-items:center;justify-content:center;font-size:2.2rem">${typeIcon}</div>`;
   } else if(l.lat && l.lng){
     const osmUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${l.lat},${l.lng}&zoom=17&size=600x200&markers=${l.lat},${l.lng},red-pushpin`;
