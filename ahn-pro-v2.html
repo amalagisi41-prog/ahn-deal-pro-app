@@ -2582,7 +2582,8 @@ Requirements: use realistic CT street names and ZIP codes. Include accurate lat/
       if(mlsMode){
         const mlsNum = raw.replace(/^(mls#?|#)?\s*/i,'').trim();
         const refs = getFallbackListings(raw);
-        const ref = refs[Math.floor(Math.random()*refs.length)];
+        const mlsHash = mlsNum.split('').reduce((h,c)=>((h*31)+c.charCodeAt(0))&0xffff,0);
+        const ref = refs[mlsHash % refs.length];
         const synthetic = scoreListingFull({
           mlsNumber: mlsNum,
           address: ref.address, city: ref.city,
@@ -2608,7 +2609,9 @@ Requirements: use realistic CT street names and ZIP codes. Include accurate lat/
         const parts = raw.split(',');
         const street = parts[0].trim();
         const cityState = parts.slice(1).join(',').trim() || 'Stamford, CT';
-        const ref = getFallbackListings(raw)[0];
+        const refs = getFallbackListings(raw);
+        const addrHash = raw.split('').reduce((h,c)=>((h*31)+c.charCodeAt(0))&0xffff,0);
+        const ref = refs[addrHash % refs.length];
         const synthetic = scoreListingFull({
           address: street, city: cityState,
           price: ref.price, beds: ref.beds, baths: ref.baths, sqft: ref.sqft,
@@ -2648,6 +2651,10 @@ Requirements: use realistic CT street names and ZIP codes. Include accurate lat/
       })
     });
 
+    if(!resp.ok){
+      const errData = await resp.json().catch(()=>({}));
+      throw new Error(`API error ${resp.status}: ${errData.error?.message||resp.statusText}`);
+    }
     const data = await resp.json();
     const raw_text = data.content?.[0]?.text||'';
     const clean = raw_text.replace(/```json|```/g,'').trim();
@@ -3373,7 +3380,20 @@ function toggleCardExpand(idx){
   if(chev) chev.textContent = open ? 'Close ▴' : 'Details ▾';
   if(open){
     const l = searchResults.find(p=>p.address === document.getElementById('lc-'+idx)?.dataset?.addr) || searchResults[idx];
-    if(l?.lat && l?.lng) initCardMap(idx, l.lat, l.lng);
+    if(l?.lat && l?.lng){
+      initCardMap(idx, l.lat, l.lng);
+    } else if(l){
+      // Geocode the full address to get precise coordinates
+      const fullAddr = encodeURIComponent((l.address||'') + ', ' + (l.city||''));
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${fullAddr}`,{headers:{'Accept-Language':'en','User-Agent':'AHNDealPro/1.0'}})
+        .then(r=>r.json()).then(results=>{
+          if(results&&results[0]){
+            const lat=parseFloat(results[0].lat), lng=parseFloat(results[0].lon);
+            l.lat=lat; l.lng=lng;
+            initCardMap(idx, lat, lng);
+          }
+        }).catch(()=>{});
+    }
   }
 }
 
