@@ -3274,6 +3274,7 @@ function renderListingCard(l, idx){
     l.walkScore      && ['Walk Score',       `${l.walkScore}/100`],
     l.schoolRating   && ['School Rating',    `${l.schoolRating}/10`],
     l.hoa            && ['HOA Fee',          `$${l.hoa}/mo`],
+    l.floodRisk      && ['Flood Risk',       l.floodRisk],
     l.nearbyAmenities&& ['Nearby',           l.nearbyAmenities],
   ].filter(Boolean);
 
@@ -3346,6 +3347,16 @@ function renderListingCard(l, idx){
       ${l.comparableSales?`<div style="font-size:.65rem;color:var(--muted);margin-bottom:3px">📊 Comps: ${l.comparableSales}</div>`:''}
       ${l.rentComps?`<div style="font-size:.65rem;color:var(--muted)">🏠 Rent: ${l.rentComps}</div>`:''}
     </div>` : ''}
+    <!-- Edit / Correct Data panel -->
+    <div id="lc-edit-${idx}" style="display:none;background:rgba(240,180,41,0.05);border:1px solid rgba(240,180,41,0.25);border-radius:8px;padding:12px;margin-bottom:10px">
+      <div style="font-size:0.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);margin-bottom:10px">✏️ CORRECT PROPERTY DATA</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        ${[['lce-price','List Price ($)',l.price,'number'],['lce-beds','Beds',l.beds||'','number'],['lce-baths','Baths',l.baths||'','number'],['lce-sqft','Sqft',l.sqft||'','number'],['lce-yb','Year Built',l.yearBuilt||'','number'],['lce-lot','Lot Size',l.lotSize||'','text'],['lce-rent','Est. Rent/mo ($)',l.estimatedRent||'','number'],['lce-tax','Property Tax/yr ($)',l.propertyTax||'','number'],['lce-av','Assessed Value ($)',l.assessedValue||'','number'],['lce-ws','Walk Score (0-100)',l.walkScore||'','number'],['lce-sr','School Rating (1-10)',l.schoolRating||'','number'],['lce-flood','Flood Risk (e.g. 1/10)',l.floodRisk||'','text']].map(([id,lbl,val,type])=>`
+        <div><label style="font-size:.58rem;color:var(--muted);display:block;margin-bottom:3px">${lbl}</label><input id="${id}-${idx}" value="${val}" type="${type}" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.07);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--off);font-size:.72rem;font-family:inherit;outline:none"></div>`).join('')}
+      </div>
+      <button onclick="applyCardEdit(${idx})" style="width:100%;padding:9px;background:var(--amber);border:none;border-radius:8px;font-family:inherit;font-size:.73rem;font-weight:800;color:#000;cursor:pointer">Apply Changes ✓</button>
+    </div>
+
     <!-- Notes panel (inside expand) -->
     <div id="note-panel-${idx}" style="display:none;margin-bottom:8px">
       <div style="font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:8px">Notes &amp; Tags</div>
@@ -3362,10 +3373,11 @@ function renderListingCard(l, idx){
   </div>
 
   <!-- Action buttons — always visible -->
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 14px 14px">
-    <button onclick="event.stopPropagation();lcAnalyze(${idx})" style="padding:11px 6px;background:var(--teal);border:none;border-radius:8px;font-family:inherit;font-size:0.73rem;font-weight:800;color:var(--navy);cursor:pointer;-webkit-tap-highlight-color:transparent">Analyze →</button>
-    <button id="save-btn-${idx}" onclick="event.stopPropagation();lcToggleSave(${idx})" style="padding:11px 6px;background:${isSaved?'rgba(46,207,173,0.2)':'rgba(46,207,173,0.1)'};border:1.5px solid var(--teal);border-radius:8px;font-family:inherit;font-size:0.73rem;font-weight:800;color:var(--teal);cursor:pointer;-webkit-tap-highlight-color:transparent">${isSaved?'★ Saved':'☆ Save'}</button>
-    <button onclick="event.stopPropagation();lcToggleNotes(${idx})" style="padding:11px 6px;background:none;border:1.5px solid var(--border2);border-radius:8px;font-family:inherit;font-size:0.73rem;font-weight:700;color:var(--muted);cursor:pointer;-webkit-tap-highlight-color:transparent">📝 Notes</button>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;padding:0 14px 14px">
+    <button onclick="event.stopPropagation();lcAnalyze(${idx})" style="padding:10px 4px;background:var(--teal);border:none;border-radius:8px;font-family:inherit;font-size:0.67rem;font-weight:800;color:var(--navy);cursor:pointer;-webkit-tap-highlight-color:transparent">Analyze →</button>
+    <button id="save-btn-${idx}" onclick="event.stopPropagation();lcToggleSave(${idx})" style="padding:10px 4px;background:${isSaved?'rgba(46,207,173,0.2)':'rgba(46,207,173,0.1)'};border:1.5px solid var(--teal);border-radius:8px;font-family:inherit;font-size:0.67rem;font-weight:800;color:var(--teal);cursor:pointer;-webkit-tap-highlight-color:transparent">${isSaved?'★ Saved':'☆ Save'}</button>
+    <button onclick="event.stopPropagation();lcToggleNotes(${idx})" style="padding:10px 4px;background:none;border:1.5px solid var(--border2);border-radius:8px;font-family:inherit;font-size:0.67rem;font-weight:700;color:var(--muted);cursor:pointer;-webkit-tap-highlight-color:transparent">📝 Notes</button>
+    <button onclick="event.stopPropagation();lcToggleEdit(${idx})" style="padding:10px 4px;background:none;border:1.5px solid rgba(240,180,41,0.4);border-radius:8px;font-family:inherit;font-size:0.67rem;font-weight:700;color:var(--amber);cursor:pointer;-webkit-tap-highlight-color:transparent">✏️ Edit</button>
   </div>
 </div>`;
 }
@@ -3463,6 +3475,43 @@ function lcToggleSave(idx){
     btn.textContent = saved ? '★ Saved' : '☆ Save';
     btn.style.background = saved ? 'rgba(46,207,173,0.2)' : 'rgba(46,207,173,0.1)';
   }
+}
+
+/* ── Edit / Correct Data toggle ── */
+function lcToggleEdit(idx){
+  const expand = document.getElementById('lc-expand-'+idx);
+  if(expand && expand.style.display==='none') toggleCardExpand(idx);
+  const panel = document.getElementById('lc-edit-'+idx);
+  if(panel) panel.style.display = panel.style.display==='none' ? 'block' : 'none';
+}
+
+function applyCardEdit(idx){
+  const card = document.getElementById('lc-'+idx);
+  const addr = card?.dataset?.addr;
+  const l = (addr ? searchResults.find(p=>p.address===addr) : null) || searchResults[idx];
+  if(!l) return;
+  const gv = (id)=>{ const el=document.getElementById(id+'-'+idx); return el?el.value.trim():null; };
+  const gn = (id)=>{ const v=parseFloat(gv(id)); return isNaN(v)?null:v; };
+  if(gn('lce-price')) l.price = gn('lce-price');
+  if(gn('lce-beds'))  l.beds  = gn('lce-beds');
+  if(gn('lce-baths')) l.baths = gn('lce-baths');
+  if(gn('lce-sqft'))  l.sqft  = gn('lce-sqft');
+  if(gn('lce-yb'))    l.yearBuilt = gn('lce-yb');
+  const lot = gv('lce-lot'); if(lot) l.lotSize = lot;
+  if(gn('lce-rent'))  l.estimatedRent = gn('lce-rent');
+  if(gn('lce-tax'))   l.propertyTax   = gn('lce-tax');
+  if(gn('lce-av'))    l.assessedValue = gn('lce-av');
+  if(gn('lce-ws'))    l.walkScore     = gn('lce-ws');
+  if(gn('lce-sr'))    l.schoolRating  = gn('lce-sr');
+  const flood = gv('lce-flood'); if(flood) l.floodRisk = flood;
+  // Recalculate investment metrics
+  const updated = scoreListingFull(l);
+  Object.assign(l, updated);
+  // Mark as user-corrected so it no longer shows "Estimated data"
+  l.highlights = (l.highlights||'').replace('Estimated investment profile — add your Claude API key in Settings for a real AI analysis.','').trim() || l.highlights;
+  l.userCorrected = true;
+  // Re-render all results (preserves corrected data in searchResults)
+  renderResults(searchResults);
 }
 
 /* ── Notes toggle ── */
