@@ -1099,6 +1099,20 @@ input[type=hidden]{display:none}
       <div style="font-size:0.65rem;color:var(--muted);margin-top:4px;padding:0 2px">Google key enables Street View property photos. Get a free key at Google Cloud Console with Maps Static API enabled.</div>
       </div>
 
+      <!-- Public Records Enrichment — ATTOM -->
+      <div style="padding:14px 15px;border-top:1px solid rgba(255,255,255,0.07)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:0.82rem;font-weight:700;color:var(--off)">Public Records Enrichment</span>
+          <span style="font-size:0.6rem;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:var(--amber);background:rgba(255,186,8,0.12);padding:3px 9px;border-radius:20px">ATTOM</span>
+        </div>
+        <div style="font-size:0.72rem;color:var(--muted);line-height:1.6;margin-bottom:10px">Adds <strong style="color:var(--off)">tax history, AVM, flood zone, lot size &amp; owner info</strong> from ATTOM public records — auto-enriches every card you open. Get a free trial at <strong style="color:var(--amber)">api.developer.attomdata.com</strong></div>
+        <div class="exrow" style="padding:0;border:none"><span class="exlbl">ATTOM API Key</span><input type="password" class="exinp" id="set-attom-key" placeholder="••••••••••••••••••••" autocomplete="off" style="width:180px"></div>
+        <div id="attom-status" style="margin-top:10px;font-size:0.65rem;color:var(--muted);min-height:16px"></div>
+        <button onclick="testAttomConnection()" style="margin-top:8px;width:100%;padding:10px;border-radius:8px;border:1.5px solid rgba(255,186,8,0.35);background:rgba(255,186,8,0.07);font-family:inherit;font-size:0.76rem;font-weight:700;color:var(--amber);cursor:pointer;-webkit-tap-highlight-color:transparent">
+          🏛 &nbsp;Test Connection
+        </button>
+      </div>
+
       <!-- Live MLS Integration — AnyProp -->
       <div style="padding:14px 15px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -1972,7 +1986,8 @@ function loadSettings(){
       'set-license':s.license,'set-market':s.market,'set-rate':s.rate,
       'set-down':s.down,'set-vac':s.vac,'set-tax':s.tax,'set-appr':s.appr,
       'set-client':s.client,'set-footer':s.footer,'set-claude-key':s.claudeKey,
-      'set-anyprop-id':s.anypropId,'set-anyprop-secret':s.anypropSecret
+      'set-anyprop-id':s.anypropId,'set-anyprop-secret':s.anypropSecret,
+      'set-attom-key':s.attomKey
     };
     Object.entries(map).forEach(([id,val])=>{
       const el=document.getElementById(id);
@@ -2030,7 +2045,8 @@ function saveSettings(){
     footer: document.getElementById('set-footer')?.value||'',
     claudeKey: document.getElementById('set-claude-key')?.value||'',
     anypropId: document.getElementById('set-anyprop-id')?.value||'',
-    anypropSecret: document.getElementById('set-anyprop-secret')?.value||''
+    anypropSecret: document.getElementById('set-anyprop-secret')?.value||'',
+    attomKey: document.getElementById('set-attom-key')?.value||''
   };
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
 
@@ -2541,6 +2557,85 @@ async function testAnyPropConnection() {
     const mlsList = acctData.resources?.listings?.map(m => m.originating_system_full_name || m.originating_system_name) || [];
     const mlsLabel = mlsList.length ? mlsList.join(', ') : 'MLS data';
     if (statusEl) statusEl.innerHTML = `<span style="color:var(--teal)">✓ Connected — access to: ${mlsLabel}</span>`;
+  } catch(e) {
+    if (statusEl) statusEl.innerHTML = `<span style="color:var(--red)">✗ ${e.message}</span>`;
+  }
+}
+
+/* ══════════════════════════════════════
+   ATTOM PUBLIC RECORDS ENGINE
+══════════════════════════════════════ */
+const ATTOM_BASE = 'https://api.gateway.attomdata.com/propertyapi/v1.0.0';
+
+async function attomFetch(path, params, apiKey) {
+  const url = new URL(ATTOM_BASE + path);
+  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+  const resp = await fetch(url.toString(), {
+    headers: { 'apikey': apiKey, 'Accept': 'application/json' }
+  });
+  if (!resp.ok) throw new Error(`ATTOM ${resp.status}`);
+  return resp.json();
+}
+
+async function attomEnrichListing(l, apiKey) {
+  if (!apiKey || !l) return;
+  // parse address parts — ATTOM wants address1 (street) + address2 (city+state+zip)
+  const streetPart = l.address || '';
+  const cityPart   = l.city   || '';
+  if (!streetPart) return;
+  try {
+    const data = await attomFetch('/property/expandedprofile', {
+      address1: streetPart,
+      address2: cityPart
+    }, apiKey);
+    const prop = data?.property?.[0];
+    if (!prop) return;
+    const lot    = prop.lot || {};
+    const bldg   = prop.building || {};
+    const assess = prop.assessment || {};
+    const market = assess.market || {};
+    const tax    = assess.tax || {};
+    const summ   = prop.summary || {};
+    const loc    = prop.location || {};
+
+    if (!l.sqft       && bldg.size?.livingsize)   l.sqft       = bldg.size.livingsize;
+    if (!l.beds       && bldg.rooms?.beds)         l.beds       = bldg.rooms.beds;
+    if (!l.baths      && bldg.rooms?.bathstotal)   l.baths      = bldg.rooms.bathstotal;
+    if (!l.yearBuilt  && summ.yearbuilt)           l.yearBuilt  = summ.yearbuilt;
+    if (!l.lotSize    && lot.lotsize2)             l.lotSize    = (lot.lotsize2 / 43560).toFixed(2) + ' acres';
+    if (!l.assessedValue && assess.assessed?.totalvalue) l.assessedValue = assess.assessed.totalvalue;
+    if (!l.propertyTax   && tax.taxamt)            l.propertyTax = tax.taxamt;
+    if (market.marketttlvalue && !l.attomAvm)      l.attomAvm   = market.marketttlvalue;
+    if (loc.flood?.fldzone)                        l.floodZone  = loc.flood.fldzone;
+    if (summ.proptype)                             l.attomType  = summ.proptype;
+    const owner = prop.owner || {};
+    if (owner.owner1?.lastname)                    l.ownerName  = `${owner.owner1.firstname||''} ${owner.owner1.lastname}`.trim();
+
+    l.attomEnriched = true;
+    const updated = scoreListingFull(l);
+    Object.assign(l, updated);
+  } catch(e) {
+    console.warn('ATTOM enrichment:', e.message);
+  }
+}
+
+async function testAttomConnection() {
+  const key = document.getElementById('set-attom-key')?.value.trim();
+  const statusEl = document.getElementById('attom-status');
+  if (!key) {
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--amber)">⚠ Enter your ATTOM API key first</span>';
+    return;
+  }
+  if (statusEl) statusEl.innerHTML = '<span style="color:var(--muted)">Testing…</span>';
+  try {
+    // Quick property lookup on a known address to validate key
+    const data = await attomFetch('/property/basicprofile', {
+      address1: '4529 Winona Court', address2: 'Denver, CO 80212'
+    }, key);
+    const count = data?.property?.length || 0;
+    if (statusEl) statusEl.innerHTML = count
+      ? '<span style="color:var(--amber)">✓ ATTOM connected — public records active</span>'
+      : '<span style="color:var(--amber)">✓ ATTOM key valid (no results for test address)</span>';
   } catch(e) {
     if (statusEl) statusEl.innerHTML = `<span style="color:var(--red)">✗ ${e.message}</span>`;
   }
@@ -3422,12 +3517,15 @@ function renderListingCard(l, idx){
   // Full public record rows
   const pubRows = [
     l.assessedValue  && ['Assessed Value',  `$${l.assessedValue.toLocaleString()}`],
+    l.attomAvm       && ['ATTOM AVM',        `$${l.attomAvm.toLocaleString()}`],
     l.lastSalePrice  && ['Last Sale Price',  `$${l.lastSalePrice.toLocaleString()}`],
     l.lastSaleDate   && ['Sale Date',        l.lastSaleDate],
     l.daysOnMarket   && ['Days on Market',   `${l.daysOnMarket} days`],
     l.yearBuilt      && ['Year Built',       l.yearBuilt],
     l.sqft           && ['Living Area',      `${l.sqft.toLocaleString()} sqft`],
     l.lotSize        && ['Lot Size',         l.lotSize],
+    l.floodZone      && ['Flood Zone',       l.floodZone],
+    l.ownerName      && ['Owner',            l.ownerName],
     l.walkScore      && ['Walk Score',       `${l.walkScore}/100`],
     l.schoolRating   && ['School Rating',    `${l.schoolRating}/10`],
     l.hoa            && ['HOA Fee',          `$${l.hoa}/mo`],
@@ -3491,7 +3589,7 @@ function renderListingCard(l, idx){
     </div>
     ${l.highlights?`<div style="font-size:.71rem;color:var(--off);line-height:1.55;margin-bottom:10px;padding:10px 12px;background:rgba(255,255,255,0.04);border-radius:8px">${l.highlights}</div>`:''}
     ${pubRows.length?`
-    <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px">
+    <div data-attom="pubrows" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px">
       <div style="font-size:0.58rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--teal);margin-bottom:8px">📋 PUBLIC RECORD DATA</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 10px">
         ${pubRows.map(([lbl,val])=>`<div style="font-size:0.67rem"><span style="color:var(--muted)">${lbl}:</span> <strong style="color:var(--off)">${val}</strong></div>`).join('')}
@@ -3549,6 +3647,18 @@ function toggleCardExpand(idx){
   if(chev) chev.textContent = open ? 'Close ▴' : 'Details ▾';
   if(open){
     const l = searchResults.find(p=>p.address === document.getElementById('lc-'+idx)?.dataset?.addr) || searchResults[idx];
+    // ATTOM enrichment — runs once per listing on first expand
+    if(l && !l.attomEnriched){
+      const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');
+      const attomKey = (document.getElementById('set-attom-key')?.value || settings.attomKey || '').trim();
+      if(attomKey){
+        attomEnrichListing(l, attomKey).then(()=>{
+          // Refresh the expand panel fields if card is still open
+          const ep = document.getElementById('lc-expand-'+idx);
+          if(ep && ep.style.display !== 'none') refreshExpandPanel(idx, l);
+        });
+      }
+    }
     if(l?.lat && l?.lng){
       initCardMap(idx, l.lat, l.lng);
     } else if(l){
@@ -3577,6 +3687,53 @@ function initCardMap(idx, lat, lng){
     L.marker([lat,lng],{icon}).addTo(m);
     setTimeout(()=>m.invalidateSize(),150);
   }catch(e){ if(container) container.style.display='none'; }
+}
+
+/* ── Refresh expand panel after ATTOM enrichment ── */
+function refreshExpandPanel(idx, l) {
+  // Rebuild the public records grid and AVM row in-place
+  const ep = document.getElementById('lc-expand-'+idx);
+  if (!ep) return;
+
+  // Update income/expense grid values
+  const rentEls = ep.querySelectorAll('[data-attom="rent"]');
+  rentEls.forEach(el => el.textContent = $f(l.estimatedRent));
+
+  // Rebuild pub records section
+  const pubRows = [
+    l.assessedValue  && ['Assessed Value',  `$${l.assessedValue.toLocaleString()}`],
+    l.attomAvm       && ['ATTOM AVM',        `$${l.attomAvm.toLocaleString()}`],
+    l.lastSalePrice  && ['Last Sale Price',  `$${l.lastSalePrice.toLocaleString()}`],
+    l.lastSaleDate   && ['Sale Date',        l.lastSaleDate],
+    l.daysOnMarket   && ['Days on Market',   `${l.daysOnMarket} days`],
+    l.yearBuilt      && ['Year Built',       l.yearBuilt],
+    l.sqft           && ['Living Area',      `${l.sqft.toLocaleString()} sqft`],
+    l.lotSize        && ['Lot Size',         l.lotSize],
+    l.floodZone      && ['Flood Zone',       l.floodZone],
+    l.ownerName      && ['Owner',            l.ownerName],
+    l.walkScore      && ['Walk Score',       `${l.walkScore}/100`],
+    l.schoolRating   && ['School Rating',    `${l.schoolRating}/10`],
+    l.hoa            && ['HOA Fee',          `$${l.hoa}/mo`],
+    l.floodRisk      && ['Flood Risk',       l.floodRisk],
+  ].filter(Boolean);
+
+  let pubDiv = ep.querySelector('[data-attom="pubrows"]');
+  if (pubRows.length) {
+    const html = `
+    <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px">
+      <div style="font-size:0.58rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--teal);margin-bottom:8px">📋 PUBLIC RECORD DATA${l.attomEnriched?' <span style="color:var(--amber);font-size:0.55rem">· ATTOM</span>':''}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 10px">
+        ${pubRows.map(([lbl,val])=>`<div style="font-size:0.67rem"><span style="color:var(--muted)">${lbl}:</span> <strong style="color:var(--off)">${val}</strong></div>`).join('')}
+      </div>
+    </div>`;
+    if (pubDiv) {
+      pubDiv.outerHTML = html.replace('>', ' data-attom="pubrows">');
+    } else {
+      // Insert before the edit panel
+      const editDiv = ep.querySelector('[id^="lc-edit-"]');
+      if (editDiv) editDiv.insertAdjacentHTML('beforebegin', html.replace('>', ' data-attom="pubrows">'));
+    }
+  }
 }
 
 /* ── Analyze button ── */
