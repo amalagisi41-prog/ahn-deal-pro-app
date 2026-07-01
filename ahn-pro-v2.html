@@ -701,6 +701,58 @@ input[type=hidden]{display:none}
     <div class="v-detail" id="v-detail">Enter your numbers to see the deal analysis.</div>
   </div>
 
+  <!-- SCORE DASHBOARD -->
+  <div id="score-dashboard-section" style="display:none;margin-bottom:12px">
+    <!-- Gauge + Grade -->
+    <div style="background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px">
+        <div style="position:relative;width:88px;height:88px;flex-shrink:0">
+          <svg width="88" height="88" viewBox="0 0 88 88" id="score-gauge-svg">
+            <circle cx="44" cy="44" r="36" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="8"/>
+            <circle cx="44" cy="44" r="36" fill="none" stroke="#f0b429" stroke-width="8" stroke-linecap="round"
+              stroke-dasharray="226" stroke-dashoffset="226" id="score-gauge-arc"
+              transform="rotate(-90 44 44)" style="transition:stroke-dashoffset 0.8s ease,stroke 0.5s"/>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1">
+            <div style="font-size:1.5rem;font-weight:800;color:var(--off)" id="score-gauge-val">—</div>
+            <div style="font-size:0.5rem;color:var(--muted);letter-spacing:.05em">/100</div>
+          </div>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:0.55rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">PROPERTY SCORE</div>
+          <div style="font-size:1.8rem;font-weight:900;letter-spacing:-.04em;color:var(--off)" id="score-grade-val">—</div>
+          <div style="font-size:0.72rem;font-weight:800;letter-spacing:.05em;margin-top:2px" id="score-signal-val" style="color:var(--amber)">—</div>
+        </div>
+      </div>
+      <!-- Sub-score bars -->
+      <div style="display:flex;flex-direction:column;gap:7px" id="score-bars-container">
+        <!-- filled by JS -->
+      </div>
+      <!-- Weighted table -->
+      <div style="margin-top:12px;background:rgba(255,255,255,0.03);border-radius:8px;overflow:hidden" id="score-table-container">
+        <!-- filled by JS -->
+      </div>
+    </div>
+
+    <!-- Investment Strategy Comparison -->
+    <div style="background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:10px">
+      <div style="font-size:0.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:10px">⚡ INVESTMENT STRATEGY COMPARISON</div>
+      <div id="strategy-table-container"><!-- filled by JS --></div>
+    </div>
+
+    <!-- Appreciation Projections -->
+    <div style="background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:10px">
+      <div style="font-size:0.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:10px">📈 APPRECIATION PROJECTIONS</div>
+      <div id="appreciation-table-container"><!-- filled by JS --></div>
+    </div>
+
+    <!-- Scenario Analysis -->
+    <div style="background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:10px">
+      <div style="font-size:0.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:10px">🎯 SCENARIO ANALYSIS</div>
+      <div id="scenario-table-container"><!-- filled by JS --></div>
+    </div>
+  </div>
+
   <!-- PROPERTY PHOTOS (Phase 6) -->
   <div id="photos-section" style="display:none">
     <div style="margin-bottom:12px">
@@ -1292,6 +1344,160 @@ function setAnalyzeMode(m){
 }
 function togAdv(w){const c=document.getElementById('adv-'+w),ch=document.getElementById('ac-'+w);const o=c.classList.toggle('o');ch.classList.toggle('o',o);}
 
+/* ── SCORE DASHBOARD ── */
+function updateScoreDashboard(l){
+  const sec = document.getElementById('score-dashboard-section');
+  if(!sec) return;
+  sec.style.display='block';
+
+  const ps = l.propertyScore || calculatePropertyScore(l);
+  const score = typeof ps === 'object' ? (l.propertyScore||0) : ps;
+  const grade = l.grade||'—';
+  const signal = l.signal||'—';
+  const signalColor = l.signalColor||'var(--amber)';
+  const sub = l.subScores||{valueComps:50,incomePotential:50,neighborhoodQuality:60,investmentUpside:50,marketConditions:55};
+
+  // Gauge
+  const arc=document.getElementById('score-gauge-arc');
+  const gaugeVal=document.getElementById('score-gauge-val');
+  const gradeEl=document.getElementById('score-grade-val');
+  const signalEl=document.getElementById('score-signal-val');
+  if(arc){
+    const circumference=226;
+    const offset=circumference-(circumference*(score/100));
+    arc.style.strokeDashoffset=offset;
+    arc.style.stroke=score>=75?'#2ecfad':score>=55?'#f0b429':'#ff5e5e';
+  }
+  if(gaugeVal)gaugeVal.textContent=score;
+  if(gradeEl)gradeEl.textContent=grade;
+  if(signalEl){signalEl.textContent=signal;signalEl.style.color=signalColor;}
+
+  // Sub-score bars
+  const bars=[
+    ['Value & Comps',sub.valueComps,25],
+    ['Income Potential',sub.incomePotential,20],
+    ['Neighborhood Quality',sub.neighborhoodQuality,20],
+    ['Investment Upside',sub.investmentUpside,20],
+    ['Market Conditions',sub.marketConditions,15],
+  ];
+  const barsContainer=document.getElementById('score-bars-container');
+  if(barsContainer){
+    barsContainer.innerHTML=bars.map(([name,val,wt])=>{
+      const col=val>=70?'#2ecfad':val>=50?'#f0b429':'#ff5e5e';
+      const status=val>=70?'Strong':val>=50?'Mixed':'Weak';
+      return `<div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+          <span style="font-size:0.65rem;color:var(--off)">${name}</span>
+          <span style="font-size:0.65rem;font-weight:700;color:${col}">${val}/100</span>
+        </div>
+        <div style="background:rgba(255,255,255,0.07);border-radius:4px;height:6px;overflow:hidden">
+          <div style="width:${val}%;height:100%;background:${col};border-radius:4px;transition:width 0.7s ease"></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Weighted table
+  const tbl=document.getElementById('score-table-container');
+  if(tbl){
+    const rows=bars.map(([name,val,wt])=>{
+      const status=val>=70?'Strong':val>=50?'Mixed':'Weak';
+      const sc=val>=70?'var(--teal)':val>=50?'var(--amber)':'var(--red)';
+      return `<div style="display:grid;grid-template-columns:1fr 60px 40px 60px;gap:6px;padding:7px 10px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.63rem;align-items:center">
+        <span style="color:var(--off)">${name}</span>
+        <span style="color:var(--muted);text-align:center">${val}/100</span>
+        <span style="color:var(--muted);text-align:center">${wt}%</span>
+        <span style="color:${sc};font-weight:700;text-align:right">${status}</span>
+      </div>`;
+    }).join('');
+    tbl.innerHTML=`
+      <div style="display:grid;grid-template-columns:1fr 60px 40px 60px;gap:6px;padding:6px 10px;background:rgba(255,255,255,0.05);font-size:0.55rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">
+        <span>Category</span><span style="text-align:center">Score</span><span style="text-align:center">Wt</span><span style="text-align:right">Status</span>
+      </div>
+      ${rows}
+      <div style="padding:8px 10px;font-size:0.65rem;font-weight:800">
+        <span style="color:var(--off)">Property Score: </span><span style="color:${signalColor}">${score}/100</span>
+        <span style="color:var(--muted)"> · Grade: </span><span style="color:${signalColor}">${grade}</span>
+        <span style="color:var(--muted)"> · Signal: </span><span style="color:${signalColor}">${signal}</span>
+      </div>`;
+  }
+
+  // Investment Strategy Comparison
+  const price=l.price||500000, rent=l.estimatedRent||Math.round(price*0.007), tax=l.propertyTax||Math.round(price*0.016);
+  const sqft=l.sqft||1500, appr=parseFloat(document.getElementById('l-appr')?.value||3.5);
+  const strat=calculateStrategies(price,rent,tax,sqft,appr);
+  const stratEl=document.getElementById('strategy-table-container');
+  if(stratEl){
+    const stratRows=[
+      ['Buy & Hold (Rental)', strat.buyHold],
+      ['BRRRR', strat.brrrr],
+      ['Fix & Flip', strat.fixFlip],
+    ];
+    stratEl.innerHTML=`
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;padding:6px 8px;background:rgba(255,255,255,0.05);font-size:0.52rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-radius:6px 6px 0 0">
+        <span>Strategy</span><span>Return</span><span>Timeframe</span><span>Key Risk</span>
+      </div>
+      ${stratRows.map(([name,s])=>{
+        const col=s.feasible?'var(--teal)':'var(--red)';
+        return `<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;padding:8px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.6rem;align-items:start">
+          <span style="color:var(--off);font-weight:600">${name}</span>
+          <span style="color:${col};font-weight:700">${s.return}</span>
+          <span style="color:var(--muted)">${s.timeframe}</span>
+          <span style="color:var(--muted);font-size:0.55rem">${s.risk}</span>
+        </div>`;
+      }).join('')}`;
+  }
+
+  // Appreciation Projections
+  const apprEl=document.getElementById('appreciation-table-container');
+  if(apprEl){
+    const years=[1,3,5,10];
+    const rates=[{label:'Conservative (1%)',r:0.01,col:'var(--muted)'},{label:'Moderate (3.5%)',r:0.035,col:'var(--amber)'},{label:'Aggressive (6%)',r:0.06,col:'var(--teal)'}];
+    apprEl.innerHTML=`
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:0.62rem">
+          <thead>
+            <tr style="background:rgba(255,255,255,0.05)">
+              <th style="padding:7px 8px;text-align:left;color:var(--muted);font-weight:600">Timeline</th>
+              ${rates.map(rate=>`<th style="padding:7px 8px;text-align:right;color:${rate.col};font-weight:700">${rate.label}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${years.map(y=>`
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+                <td style="padding:7px 8px;color:var(--off);font-weight:600">Year ${y}</td>
+                ${rates.map(rate=>{
+                  const val=Math.round(price*Math.pow(1+rate.r,y));
+                  return `<td style="padding:7px 8px;text-align:right;color:${rate.col};font-weight:700">$${(val/1000).toFixed(0)}K</td>`;
+                }).join('')}
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  }
+
+  // Scenario Analysis
+  const scenEl=document.getElementById('scenario-table-container');
+  if(scenEl){
+    const scenarios=[
+      {name:'Bull Case',prob:25,col:'var(--teal)',ret:'+30% to +45% (5yr)',trigger:'Rates fall 1%+, strong local job growth, limited inventory'},
+      {name:'Base Case',prob:55,col:'var(--amber)',ret:'+10% to +20% (5yr)',trigger:'Steady appreciation 3-4%, stable rents, moderate demand'},
+      {name:'Bear Case',prob:20,col:'var(--red)',ret:'-5% to +5% (5yr)',trigger:'Rate spike, recession, oversupply in local market'},
+    ];
+    scenEl.innerHTML=`
+      <div style="display:grid;grid-template-columns:1fr 50px 1fr 1fr;gap:4px;padding:6px 8px;background:rgba(255,255,255,0.05);font-size:0.52rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-radius:6px 6px 0 0">
+        <span>Scenario</span><span>Prob</span><span>Expected Return</span><span>Trigger</span>
+      </div>
+      ${scenarios.map(s=>`
+        <div style="display:grid;grid-template-columns:1fr 50px 1fr 1fr;gap:4px;padding:8px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.6rem;align-items:start">
+          <span style="color:${s.col};font-weight:700">${s.name}</span>
+          <span style="color:var(--muted)">${s.prob}%</span>
+          <span style="color:${s.col};font-weight:700">${s.ret}</span>
+          <span style="color:var(--muted);font-size:0.55rem">${s.trigger}</span>
+        </div>`).join('')}`;
+  }
+}
+
 /* ── VERDICT ── */
 function setV(cls,lbl,v1,v2,v3,v1l,v2l,v3l,detail,c1,c2,c3){
   const el=document.getElementById('verdict');el.className='verdict '+cls;
@@ -1336,6 +1542,17 @@ function cLTL(){
   document.getElementById('exit-lbl').textContent='Exit · '+hL+' Years';
   se('ex-sale',$f(saleP),'pos');se('ex-appr',$f(apprG),'pos');se('ex-cumcf',$f(ccf),ccf>=0?'pos':'neg');
   se('ex-prin',$f(prin),'pos');se('ex-profit',$f(tp),'pos');se('ex-roi',pct(roi)+' · '+pct(irr)+' IRR','pos');
+
+  // Score dashboard — build synthetic listing from current inputs
+  const _sdl = scoreListingFull({
+    price, estimatedRent:rent, propertyTax:tax, hoa,
+    sqft: parseFloat(document.getElementById('l-sqft')?.value||0)||null,
+    yearBuilt: parseFloat(document.getElementById('l-yb')?.value||0)||null,
+    walkScore: parseFloat(document.getElementById('l-ws')?.value||0)||null,
+    schoolRating: parseFloat(document.getElementById('l-sr')?.value||0)||null,
+    daysOnMarket: parseFloat(document.getElementById('l-dom')?.value||0)||0,
+  });
+  updateScoreDashboard(_sdl);
 }
 function rstLTL(){
   [['l-price',650000],['l-down',162500],['l-close',9000],['l-rehab',0],['l-rate',7.25],['l-term',30],['l-rent',5200],['l-tax',8400],['l-ins',2400],['l-mgmt',8],['l-maint',3000],['l-hoa',0],['l-vac',5],['l-appr',3],['l-hold',5],['l-rentg',2]].forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.value=v;});
@@ -2965,7 +3182,120 @@ function scoreListingFull(l){
   const cap = (noi/price)*100;
   const coc = (acf/down)*100;
   const mcf = acf/12;
-  return {...l, price, estimatedRent:rent, propertyTax:tax, hoa, cap, coc, mcf, noi, pay, cap_score: cap>=6?'good':cap>=4?'warn':'bad'};
+  const scored = {...l, price, estimatedRent:rent, propertyTax:tax, hoa, cap, coc, mcf, noi, pay, cap_score: cap>=6?'good':cap>=4?'warn':'bad'};
+  const ps = calculatePropertyScore(scored);
+  return {...scored, ...ps};
+}
+
+function calculatePropertyScore(l){
+  const price = l.price || 500000;
+  const cap = l.cap || 0;
+  const coc = l.coc || 0;
+  const mcf = l.mcf || 0;
+
+  // 1. Value & Comps (25%) — GRM, price/sqft, assessed vs price
+  const grm = l.estimatedRent ? price/(l.estimatedRent*12) : 18;
+  let valueScore = grm<10?88:grm<12?72:grm<15?56:grm<18?40:24;
+  if(l.assessedValue){ const ratio=l.assessedValue/price; if(ratio>0.85)valueScore=Math.min(100,valueScore+10); else if(ratio<0.5)valueScore=Math.max(0,valueScore-10); }
+  if(l.sqft&&l.sqft>0){ const ppsf=price/l.sqft; if(ppsf<150)valueScore=Math.min(100,valueScore+8); else if(ppsf>500)valueScore=Math.max(0,valueScore-8); }
+
+  // 2. Income Potential (20%) — CAP, CoC, cash flow
+  let incomeScore = cap>=8?90:cap>=6?72:cap>=5?58:cap>=4?44:cap>=3?32:18;
+  if(coc>=8)incomeScore=Math.min(100,incomeScore+8);
+  else if(coc<0)incomeScore=Math.max(0,incomeScore-15);
+  if(mcf>=500)incomeScore=Math.min(100,incomeScore+5);
+  else if(mcf<-300)incomeScore=Math.max(0,incomeScore-10);
+
+  // 3. Neighborhood Quality (20%) — walk score, school rating, flood
+  let neighScore = 60;
+  let nPts=0,nSum=0;
+  if(l.walkScore){ nSum+=l.walkScore; nPts++; }
+  if(l.schoolRating){ nSum+=l.schoolRating*10; nPts++; }
+  if(nPts>0) neighScore=nSum/nPts;
+  if(l.floodZone&&(l.floodZone[0]==='A'||l.floodZone[0]==='V'))neighScore=Math.max(0,neighScore-15);
+  if(l.floodRisk&&parseInt(l.floodRisk)>=7)neighScore=Math.max(0,neighScore-10);
+
+  // 4. Investment Upside (20%) — age, DOM, last sale appreciation
+  let investScore = 55;
+  const yearBuilt = l.yearBuilt||1990;
+  const age = new Date().getFullYear()-yearBuilt;
+  if(age<10)investScore+=15; else if(age<20)investScore+=8; else if(age>50)investScore-=10;
+  const dom = l.daysOnMarket||30;
+  if(dom<14)investScore+=10; else if(dom>90)investScore-=10;
+  if(l.lastSalePrice&&l.lastSaleDate){
+    const yrsAgo=(Date.now()-new Date(l.lastSaleDate))/(365.25*24*3600*1000);
+    if(yrsAgo>0){ const ann=((price/l.lastSalePrice)-1)/yrsAgo*100; if(ann>5)investScore+=10; else if(ann<0)investScore-=10; }
+  }
+  investScore=Math.max(0,Math.min(100,investScore));
+
+  // 5. Market Conditions (15%) — DOM as proxy for market heat
+  let marketScore = 55;
+  if(dom<14)marketScore=85; else if(dom<30)marketScore=70; else if(dom<60)marketScore=55; else if(dom>90)marketScore=38;
+
+  const composite = Math.round(valueScore*0.25 + incomeScore*0.20 + neighScore*0.20 + investScore*0.20 + marketScore*0.15);
+
+  let grade,signal,signalColor;
+  if(composite>=85){grade='A+';signal='STRONG BUY';signalColor='#2ecfad';}
+  else if(composite>=75){grade='A';signal='BUY';signalColor='#2ecfad';}
+  else if(composite>=65){grade='B+';signal='BUY / WATCH';signalColor='#2ecfad';}
+  else if(composite>=55){grade='B';signal='HOLD / WATCH';signalColor='#f0b429';}
+  else if(composite>=45){grade='C';signal='CAUTION';signalColor='#f0b429';}
+  else if(composite>=35){grade='D';signal='PASS';signalColor='#ff5e5e';}
+  else{grade='F';signal='AVOID';signalColor='#ff5e5e';}
+
+  return {
+    propertyScore: composite, grade, signal, signalColor,
+    subScores:{
+      valueComps:Math.round(valueScore),
+      incomePotential:Math.round(incomeScore),
+      neighborhoodQuality:Math.round(neighScore),
+      investmentUpside:Math.round(investScore),
+      marketConditions:Math.round(marketScore)
+    }
+  };
+}
+
+function calculateStrategies(price, rent, tax, sqft, appr){
+  appr = appr || 3.5;
+  sqft = sqft || 1500;
+  const down=price*0.25, loan=price-down;
+  const rate=7.25, r=rate/100/12, n=30*12;
+  const pay=loan*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);
+  const annCF=(rent*12*0.95)-tax-2400-(rent*12*0.95*0.08)-3000-(pay*12);
+
+  // Buy & Hold 10yr
+  const saleP10=price*Math.pow(1+appr/100,10);
+  const totalRet=annCF*10+(saleP10-price);
+  const bhFeasible=annCF>=-5000;
+  const bhReturn=totalRet>=0?`+$${Math.round(totalRet/1000)}K total (10yr)`:`-$${Math.abs(Math.round(totalRet/1000))}K total (10yr)`;
+  const bhRisk=annCF<0?`$${Math.abs(Math.round(annCF/12))}/mo negative carry`:`+$${Math.round(annCF/12)}/mo cash flow`;
+
+  // BRRRR
+  const rehabEst=Math.round(sqft*28);
+  const arvEst=Math.round((price+rehabEst)*1.10);
+  const allInBasis=price+rehabEst;
+  const maxRefi=Math.round(arvEst*0.75);
+  const brrrFeasible=maxRefi>=allInBasis;
+  const stuckK=Math.max(0,allInBasis-maxRefi);
+  const brrrReturn=brrrFeasible?`Positive spread`:`Negative spread (FAIL)`;
+  const brrrRisk=brrrFeasible
+    ?`ARV $${Math.round(arvEst/1000)}K > all-in $${Math.round(allInBasis/1000)}K`
+    :`ARV $${Math.round(arvEst/1000)}K < all-in $${Math.round(allInBasis/1000)}K; ~$${Math.round(stuckK/1000)}K stuck`;
+
+  // Fix & Flip
+  const flipRehab=Math.round(sqft*45);
+  const flipARV=Math.round(price*1.22);
+  const requiredARV=Math.round((price+flipRehab)/0.70);
+  const flipProfit=flipARV-price-flipRehab-Math.round(price*0.06);
+  const flipFeasible=flipARV>=requiredARV&&flipProfit>0;
+  const flipReturn=flipProfit>=0?`+$${Math.round(flipProfit/1000)}K profit`:`-$${Math.abs(Math.round(flipProfit/1000))}K loss`;
+  const flipRisk=`Required ARV $${Math.round(requiredARV/1000)}K; est. ~$${Math.round(flipARV/1000)}K`;
+
+  return {
+    buyHold:{return:bhReturn,timeframe:'7-10 years',risk:bhRisk,feasible:bhFeasible},
+    brrrr:{return:brrrReturn,timeframe:'12-18 mo refi',risk:brrrRisk,feasible:brrrFeasible},
+    fixFlip:{return:flipReturn,timeframe:'5-6 months',risk:flipRisk,feasible:flipFeasible}
+  };
 }
 
 /* ══════════════════════════════════════
@@ -3564,8 +3894,12 @@ function renderListingCard(l, idx){
         <div class="lc-metric"><div class="lc-mval ${capCls}">${l.cap.toFixed(1)}%</div><div class="lc-mlbl">CAP</div></div>
         <div class="lc-metric"><div class="lc-mval ${l.coc>=8?'t':l.coc>=4?'a':'r'}">${l.coc.toFixed(1)}%</div><div class="lc-mlbl">CoC</div></div>
         <div class="lc-metric"><div class="lc-mval ${cfCls}">${$f(l.mcf)}</div><div class="lc-mlbl">CF/mo</div></div>
-        <div class="lc-metric"><div class="lc-mval">${l.estimatedRent?((l.price/(l.estimatedRent*12)).toFixed(1)):'—'}x</div><div class="lc-mlbl">GRM</div></div>
+        <div class="lc-metric"><div class="lc-mval" style="color:${l.signalColor||'var(--amber)'}">${l.propertyScore||'—'}<span style="font-size:0.55rem">/100</span></div><div class="lc-mlbl">SCORE</div></div>
       </div>
+      ${l.grade?`<div style="display:flex;align-items:center;gap:6px;margin-top:4px;padding:0 2px">
+        <span style="font-size:0.58rem;font-weight:800;color:${l.signalColor};background:rgba(255,255,255,0.07);padding:2px 8px;border-radius:20px;letter-spacing:.04em">Grade ${l.grade}</span>
+        <span style="font-size:0.58rem;font-weight:700;color:${l.signalColor};letter-spacing:.04em">${l.signal}</span>
+      </div>`:''}
     </div>
   </div>
 
@@ -3753,6 +4087,8 @@ function lcAnalyze(idx){
     sv('mc-down-pct',   25);
     if(typeof calcMortgage==='function') try{calcMortgage();}catch(e){}
     if(typeof cLTL==='function')         try{cLTL();}catch(e){}
+    // Score dashboard with full listing context
+    try{ updateScoreDashboard(l); }catch(e){}
     const panel = document.getElementById('manual-analyzer-panel');
     if(panel && panel.style.display==='none') toggleManualAnalyzer();
     goTab('analyze');
