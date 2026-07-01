@@ -1175,8 +1175,7 @@ input[type=hidden]{display:none}
           </div>
           <span style="font-size:0.6rem;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:var(--teal);background:rgba(46,207,173,0.15);padding:3px 9px;border-radius:20px">Active</span>
         </div>
-      <div style="font-size:0.72rem;color:var(--muted);line-height:1.6;margin-bottom:10px">Enter your Anthropic Claude API key to enable live analysis from the browser. Without a key, the app shows sample fallback listings.</div>
-      <div class="exrow"><span class="exlbl">Claude API Key</span><input type="password" class="exinp" id="set-claude-key" placeholder="sk-ant-..." style="width:180px"></div>
+      <div style="font-size:0.72rem;color:var(--teal);line-height:1.6;margin-bottom:4px;background:var(--teal-f);border-radius:8px;padding:8px 10px">✓ AI Analysis is built in — no setup needed. Just search and analyze.</div>
       <div class="exrow" style="margin-top:8px"><span class="exlbl">Google Maps Key <span style="color:var(--amber);font-size:0.6rem">(for photos)</span></span><input type="password" class="exinp" id="set-google-key" placeholder="AIza..." style="width:180px"></div>
       <div style="font-size:0.65rem;color:var(--muted);margin-top:4px;padding:0 2px">Google key enables Street View property photos. Get a free key at Google Cloud Console with Maps Static API enabled.</div>
       </div>
@@ -1187,8 +1186,7 @@ input[type=hidden]{display:none}
           <span style="font-size:0.82rem;font-weight:700;color:var(--off)">Public Records Enrichment</span>
           <span style="font-size:0.6rem;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:var(--amber);background:rgba(255,186,8,0.12);padding:3px 9px;border-radius:20px">ATTOM</span>
         </div>
-        <div style="font-size:0.72rem;color:var(--muted);line-height:1.6;margin-bottom:10px">Adds <strong style="color:var(--off)">tax history, AVM, flood zone, lot size &amp; owner info</strong> from ATTOM public records — auto-enriches every card you open. Get a free trial at <strong style="color:var(--amber)">api.developer.attomdata.com</strong></div>
-        <div class="exrow" style="padding:0;border:none"><span class="exlbl">ATTOM API Key</span><input type="password" class="exinp" id="set-attom-key" placeholder="••••••••••••••••••••" autocomplete="off" style="width:180px"></div>
+        <div style="font-size:0.72rem;color:var(--teal);line-height:1.6;margin-bottom:4px;background:var(--teal-f);border-radius:8px;padding:8px 10px">✓ ATTOM public records are built in — tax history, AVM, flood zone &amp; owner info auto-load on every property card.</div>
         <div id="attom-status" style="margin-top:10px;font-size:0.65rem;color:var(--muted);min-height:16px"></div>
         <button onclick="testAttomConnection()" style="margin-top:8px;width:100%;padding:10px;border-radius:8px;border:1.5px solid rgba(255,186,8,0.35);background:rgba(255,186,8,0.07);font-family:inherit;font-size:0.76rem;font-weight:700;color:var(--amber);cursor:pointer;-webkit-tap-highlight-color:transparent">
           🏛 &nbsp;Test Connection
@@ -2249,9 +2247,8 @@ function loadSettings(){
       'set-brand':s.brand,'set-agent':s.agent,'set-website':s.website,
       'set-license':s.license,'set-market':s.market,'set-rate':s.rate,
       'set-down':s.down,'set-vac':s.vac,'set-tax':s.tax,'set-appr':s.appr,
-      'set-client':s.client,'set-footer':s.footer,'set-claude-key':s.claudeKey,
-      'set-anyprop-id':s.anypropId,'set-anyprop-secret':s.anypropSecret,
-      'set-attom-key':s.attomKey
+      'set-client':s.client,'set-footer':s.footer,
+      'set-anyprop-id':s.anypropId,'set-anyprop-secret':s.anypropSecret
     };
     Object.entries(map).forEach(([id,val])=>{
       const el=document.getElementById(id);
@@ -2307,10 +2304,8 @@ function saveSettings(){
     appr: document.getElementById('set-appr')?.value||3,
     client: document.getElementById('set-client')?.value||'',
     footer: document.getElementById('set-footer')?.value||'',
-    claudeKey: document.getElementById('set-claude-key')?.value||'',
     anypropId: document.getElementById('set-anyprop-id')?.value||'',
-    anypropSecret: document.getElementById('set-anyprop-secret')?.value||'',
-    attomKey: document.getElementById('set-attom-key')?.value||''
+    anypropSecret: document.getElementById('set-anyprop-secret')?.value||''
   };
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
 
@@ -2641,17 +2636,10 @@ function initMapAndSearch(){
 
 async function runMapSearch(query){
   try {
-    const apiKey = document.getElementById('set-claude-key').value;
-    if(!apiKey){
-      setStatusMsg('API Key Missing', 'Configure Anthropic key in Settings');
-      return;
-    }
-
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    const resp = await fetch('/api/claude', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey
       },
       body: JSON.stringify({
         model: 'claude-opus-4-1-20250805',
@@ -2829,20 +2817,17 @@ async function testAnyPropConnection() {
 /* ══════════════════════════════════════
    ATTOM PUBLIC RECORDS ENGINE
 ══════════════════════════════════════ */
-const ATTOM_BASE = 'https://api.gateway.attomdata.com/propertyapi/v1.0.0';
-
-async function attomFetch(path, params, apiKey) {
-  const url = new URL(ATTOM_BASE + path);
+async function attomFetch(path, params) {
+  const url = new URL('/api/attom', location.origin);
+  url.searchParams.set('path', path);
   Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
-  const resp = await fetch(url.toString(), {
-    headers: { 'apikey': apiKey, 'Accept': 'application/json' }
-  });
+  const resp = await fetch(url.toString());
   if (!resp.ok) throw new Error(`ATTOM ${resp.status}`);
   return resp.json();
 }
 
-async function attomEnrichListing(l, apiKey) {
-  if (!apiKey || !l) return;
+async function attomEnrichListing(l) {
+  if (!l) return;
   // parse address parts — ATTOM wants address1 (street) + address2 (city+state+zip)
   const streetPart = l.address || '';
   const cityPart   = l.city   || '';
@@ -2851,7 +2836,7 @@ async function attomEnrichListing(l, apiKey) {
     const data = await attomFetch('/property/expandedprofile', {
       address1: streetPart,
       address2: cityPart
-    }, apiKey);
+    });
     const prop = data?.property?.[0];
     if (!prop) return;
     const lot    = prop.lot || {};
@@ -2884,18 +2869,12 @@ async function attomEnrichListing(l, apiKey) {
 }
 
 async function testAttomConnection() {
-  const key = document.getElementById('set-attom-key')?.value.trim();
   const statusEl = document.getElementById('attom-status');
-  if (!key) {
-    if (statusEl) statusEl.innerHTML = '<span style="color:var(--amber)">⚠ Enter your ATTOM API key first</span>';
-    return;
-  }
   if (statusEl) statusEl.innerHTML = '<span style="color:var(--muted)">Testing…</span>';
   try {
-    // Quick property lookup on a known address to validate key
     const data = await attomFetch('/property/basicprofile', {
       address1: '4529 Winona Court', address2: 'Denver, CO 80212'
-    }, key);
+    });
     const count = data?.property?.length || 0;
     if (statusEl) statusEl.innerHTML = count
       ? '<span style="color:var(--amber)">✓ ATTOM connected — public records active</span>'
@@ -3090,35 +3069,9 @@ Requirements: use realistic CT street names and ZIP codes. Include accurate lat/
 
   try {
     setStatusMsg('Claude is analyzing…','Processing investment metrics for each property');
-    const apiKey = (document.getElementById('set-claude-key')?.value||'').trim();
-    if(!apiKey){
-      // MLS# lookup without API key → show single placeholder tagged with MLS#
-      if(mlsMode){
-        const mlsNum = raw.replace(/^(mls#?|#)?\s*/i,'').trim();
-        const refs = getFallbackListings(raw);
-        const mlsHash = mlsNum.split('').reduce((h,c)=>((h*31)+c.charCodeAt(0))&0xffff,0);
-        const ref = refs[mlsHash % refs.length];
-        const synthetic = scoreListingFull({
-          mlsNumber: mlsNum,
-          address: ref.address, city: ref.city,
-          price: ref.price, beds: ref.beds, baths: ref.baths, sqft: ref.sqft,
-          type: ref.type, yearBuilt: ref.yearBuilt,
-          estimatedRent: ref.estimatedRent, propertyTax: ref.propertyTax, hoa: ref.hoa||0,
-          daysOnMarket: ref.daysOnMarket, status: 'Active',
-          highlights: `Sample profile for MLS# ${mlsNum}. Add your Claude API key in Settings to pull real listing data.`,
-          assessedValue: ref.assessedValue||Math.round(ref.price*0.85),
-          lastSalePrice: ref.lastSalePrice||null, lastSaleDate: ref.lastSaleDate||null,
-          lotSize: ref.lotSize||null, walkScore: ref.walkScore||null, schoolRating: ref.schoolRating||null,
-          neighborhood: ref.neighborhood||null, comparableSales: ref.comparableSales||null,
-          investmentNote: ref.investmentNote||null
-        });
-        searchResults = [synthetic];
-        document.getElementById('srch-status').style.display='none';
-        renderResults([synthetic]);
-        showNoKeyBanner();
-        return;
-      }
-      // Address lookup without API key → synthesize record for the actual address
+    const resp2check = null; // proxy handles auth
+    if(false){
+      // Address lookup fallback (unreachable — kept for structure)
       if(addressMode){
         const parts = raw.split(',');
         const street = parts[0].trim();
@@ -3146,17 +3099,10 @@ Requirements: use realistic CT street names and ZIP codes. Include accurate lat/
         showNoKeyBanner();
         return;
       }
-      // Market search without API key → show 6 sample properties for that area
-      const fallback = getFallbackListings(raw).map(l=>scoreListingFull(l));
-      searchResults = fallback;
-      renderResults(fallback);
-      document.getElementById('srch-status').style.display='none';
-      showNoKeyBanner();
-      return;
     }
-    const resp = await fetch('https://api.anthropic.com/v1/messages',{
+    const resp = await fetch('/api/claude',{
       method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         model:'claude-sonnet-4-6',
         max_tokens: parseMode==='single' ? 1200 : 2400,
@@ -3451,15 +3397,12 @@ async function enrichPropertyData(property){
   }
 
   try{
-    const apiKey = document.getElementById('set-claude-key')?.value;
-    if(!apiKey) return property;
 
     const prompt = createEnrichmentPrompt(property);
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    const resp = await fetch('/api/claude', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey
       },
       body: JSON.stringify({
         model: 'claude-opus-4-1-20250805',
@@ -3487,7 +3430,6 @@ async function enrichPropertyData(property){
 }
 
 function backgroundEnrichProperties(listings){
-  if(!document.getElementById('set-claude-key')?.value) return;
 
   listings.forEach((prop, idx) => {
     const cacheKey = `${prop.address}_${prop.city}`.toLowerCase();
@@ -3532,15 +3474,13 @@ async function generatePropertyPhotos(property){
   }
 
   try{
-    const apiKey = document.getElementById('set-claude-key')?.value;
     if(!apiKey) return [];
 
     const prompt = generatePhotosPrompt(property);
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    const resp = await fetch('/api/claude', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey
       },
       body: JSON.stringify({
         model: 'claude-opus-4-1-20250805',
@@ -3606,7 +3546,6 @@ async function generateComparableProperties(property){
   }
 
   try{
-    const apiKey = document.getElementById('set-claude-key')?.value;
     if(!apiKey){
       // Return plausible fallback comps based on property price
       const base = property.price || 500000;
@@ -3618,13 +3557,10 @@ async function generateComparableProperties(property){
     }
 
     const prompt = generateCompsPrompt(property);
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    const resp = await fetch('/api/claude', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
         model: 'claude-opus-4-1-20250805',
@@ -4030,15 +3966,10 @@ function toggleCardExpand(idx){
     const l = searchResults.find(p=>p.address === document.getElementById('lc-'+idx)?.dataset?.addr) || searchResults[idx];
     // ATTOM enrichment — runs once per listing on first expand
     if(l && !l.attomEnriched){
-      const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');
-      const attomKey = (document.getElementById('set-attom-key')?.value || settings.attomKey || '').trim();
-      if(attomKey){
-        attomEnrichListing(l, attomKey).then(()=>{
-          // Refresh the expand panel fields if card is still open
-          const ep = document.getElementById('lc-expand-'+idx);
-          if(ep && ep.style.display !== 'none') refreshExpandPanel(idx, l);
-        });
-      }
+      attomEnrichListing(l).then(()=>{
+        const ep = document.getElementById('lc-expand-'+idx);
+        if(ep && ep.style.display !== 'none') refreshExpandPanel(idx, l);
+      });
     }
     if(l?.lat && l?.lng){
       initCardMap(idx, l.lat, l.lng);
