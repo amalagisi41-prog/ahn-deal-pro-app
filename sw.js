@@ -1,6 +1,6 @@
-const CACHE_NAME = 'ahn-deal-pro-v12';
-const TILE_CACHE = 'ahn-tiles-v12';
-const ENRICHMENT_CACHE = 'ahn-enrichment-v12';
+const CACHE_NAME = 'ahn-deal-pro-v13';
+const TILE_CACHE = 'ahn-tiles-v13';
+const ENRICHMENT_CACHE = 'ahn-enrichment-v13';
 
 const STATIC_ASSETS = [
   '/',

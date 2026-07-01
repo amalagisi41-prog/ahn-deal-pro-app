@@ -37,13 +37,37 @@
   --amber:#f0b429;--amber-f:rgba(240,180,41,0.14);
   --r:14px;--r2:10px;--tab-h:68px;
   /* PWA safe areas for iPhone notch + home bar */
+  --shadow:0 2px 12px rgba(0,0,0,0.25);
   --sat: env(safe-area-inset-top, 0px);
   --sab: env(safe-area-inset-bottom, 0px);
   --sal: env(safe-area-inset-left, 0px);
   --sar: env(safe-area-inset-right, 0px);
 }
+/* ── LIGHT MODE OVERRIDES ── */
+body.light{
+  --navy:#f0f4f8;--navy2:#e8eef7;--navy3:#dde6f3;--navy4:#d4dfee;
+  --card:#ffffff;--card2:#f4f7fc;--card3:#edf1f9;
+  --white:#0f1f38;--off:#1a2e4a;--muted:rgba(15,31,56,0.5);--muted2:rgba(15,31,56,0.3);
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.13);
+  --teal-f:rgba(46,207,173,0.10);--teal-f2:rgba(46,207,173,0.15);
+  --red-f:rgba(255,94,94,0.10);--amber-f:rgba(240,180,41,0.10);
+  --shadow:0 2px 12px rgba(0,0,0,0.10);
+}
+body.light .tab-strip{background:rgba(0,0,0,0.07)}
+body.light .tsb.on{box-shadow:0 2px 8px rgba(0,0,0,0.12)}
+body.light input[type=range]{background:linear-gradient(to right,var(--teal) 0%,var(--teal) var(--pct,0%),rgba(0,0,0,0.12) var(--pct,0%),rgba(0,0,0,0.12) 100%)}
+body.light .sbtn{color:var(--white)}
+body.light .exinp{background:rgba(0,0,0,0.04);color:var(--white)}
+body.light .settings-toggle{background:rgba(0,0,0,0.05);color:var(--off)}
+body.light .app-add-btn{color:#fff}
+body.light .hdr-icon svg path{fill:#0f1f38}
+
+/* ── THEME TOGGLE BUTTON ── */
+.theme-toggle{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--border2);background:var(--card2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;-webkit-tap-highlight-color:transparent;transition:all 0.2s;margin-top:2px}
+.theme-toggle:active{opacity:0.7}
+
 html,body{height:100%;overflow:hidden;-webkit-font-smoothing:antialiased}
-body{font-family:"Inter",-apple-system,sans-serif;background:var(--navy);color:var(--white);display:flex;flex-direction:column;
+body{font-family:"Inter",-apple-system,sans-serif;background:var(--navy);color:var(--white);display:flex;flex-direction:column;transition:background 0.25s,color 0.25s;
   /* Extend background into status bar on iPhone */
   padding-top:var(--sat);
 }
@@ -538,9 +562,15 @@ input[type=hidden]{display:none}
     <div class="hdr-title" id="page-title">Analyze</div>
     <div class="hdr-sub" id="page-sub">AI Property Analyzer <span style="opacity:0.45;font-size:0.55rem">v3.0</span></div>
   </div>
-  <a class="hdr-brand" href="./" onclick="goHome();return false;">
-    <div class="hdr-icon"><svg width="14" height="14" viewBox="0 0 22 22" fill="none"><path d="M11 2L2 8.5V20h6v-6h6v6h6V8.5L11 2Z" fill="white" opacity="0.9"/></svg></div>
-  </a>
+  <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
+    <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle light/dark mode">
+      <svg id="theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg id="theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+    <a class="hdr-brand" href="./" onclick="goHome();return false;">
+      <div class="hdr-icon"><svg width="14" height="14" viewBox="0 0 22 22" fill="none"><path d="M11 2L2 8.5V20h6v-6h6v6h6V8.5L11 2Z" fill="white" opacity="0.9"/></svg></div>
+    </a>
+  </div>
   <!-- User badge (shown after login) -->
   <div class="user-badge" id="user-badge" onclick="toggleUserMenu()">
     <div class="user-avatar" id="user-avatar">?</div>
@@ -1319,6 +1349,23 @@ function goTab(t){
 }
 function goHome(){goTab('analyze');}
 function addPropAndOpenPortfolio(){goTab('portfolio'); openAddPropertyForm();}
+
+/* ── LIGHT / DARK THEME ── */
+function toggleTheme(){
+  const isLight=document.body.classList.toggle('light');
+  localStorage.setItem('ahn_theme',isLight?'light':'dark');
+  document.getElementById('theme-icon-moon').style.display=isLight?'none':'block';
+  document.getElementById('theme-icon-sun').style.display=isLight?'block':'none';
+}
+(function initTheme(){
+  if(localStorage.getItem('ahn_theme')==='light'){
+    document.body.classList.add('light');
+    const m=document.getElementById('theme-icon-moon');
+    const s=document.getElementById('theme-icon-sun');
+    if(m)m.style.display='none';
+    if(s)s.style.display='block';
+  }
+})();
 
 /* ── ANALYZE MODE ── */
 let analyzeMode='ltl';
