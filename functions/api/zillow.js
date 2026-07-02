@@ -1,5 +1,8 @@
 // Cloudflare Pages Function — Zillow Property Data proxy (Chopper Te async API)
 // Set ZILLOW_SCRAPER_KEY or Zillow_prop in Cloudflare Pages env vars
+// Modes:
+//   ?address=123 Main St, City, ST      → single property lookup
+//   ?search=Stamford CT&max_items=9     → area search for-sale listings (cached 6h at edge)
 
 const HOST = 'zillow-property-data1.p.rapidapi.com';
 
@@ -11,13 +14,32 @@ export async function onRequestGet(context) {
 
   const url = new URL(context.request.url);
   const address = url.searchParams.get('address') || '';
+  const search = url.searchParams.get('search') || '';
+  const listType = url.searchParams.get('type') || 'sale';
+  const maxItems = Math.min(parseInt(url.searchParams.get('max_items')) || 9, 12);
 
-  if (!address) {
-    return json({ error: 'address parameter required' }, 400);
+  if (!address && !search) {
+    return json({ error: 'address or search parameter required' }, 400);
   }
 
+  // Area searches are cached at the edge for 6h to protect API quota
+  const isSearch = !!search;
+  if (isSearch) {
+    const cache = caches.default;
+    const cacheKey = new Request(url.toString(), { method: 'GET' });
+    const cached = await cache.match(cacheKey);
+    if (cached) return cached;
+  }
+
+  // Build request payload
+  const payload = isSearch
+    ? (/^\d{5}$/.test(search.trim())
+        ? { zipcodes: [search.trim()], type: listType, max_items: maxItems }
+        : { search: search.trim(), type: listType, max_items: maxItems })
+    : { addresses: [address] };
+
   try {
-    // Step 1: Submit scrape job — /v1/properties accepts addresses directly
+    // Step 1: Submit scrape job
     const submitResp = await fetch(`https://${HOST}/v1/properties`, {
       method: 'POST',
       headers: {
@@ -25,7 +47,7 @@ export async function onRequestGet(context) {
         'X-RapidAPI-Key': apiKey,
         'X-RapidAPI-Host': HOST
       },
-      body: JSON.stringify({ addresses: [address] })
+      body: JSON.stringify(payload)
     });
 
     if (!submitResp.ok) {
@@ -36,50 +58,58 @@ export async function onRequestGet(context) {
     const submitData = await submitResp.json();
 
     // Small requests may return results immediately
-    if (submitData.status === 'complete' && submitData.results?.length > 0) {
-      const first = submitData.results[0];
-      if (first.success && first.property) {
-        return json({ source: HOST, raw: first.property, property: normalizeProperty(first.property, address) });
+    let resultData = null;
+    if (submitData.status === 'complete') {
+      resultData = submitData;
+    } else {
+      const jobId = submitData.job_id;
+      if (!jobId) {
+        return json({ error: 'No job_id returned', raw: submitData }, 502);
+      }
+
+      // Step 2: Poll for results (up to ~25s with backoff)
+      const delays = [2000, 3000, 4000, 5000, 6000, 5000];
+      for (const delay of delays) {
+        await sleep(delay);
+
+        const resultResp = await fetch(`https://${HOST}/v1/results/${jobId}`, {
+          headers: {
+            'X-RapidAPI-Key': apiKey,
+            'X-RapidAPI-Host': HOST,
+            'Accept': 'application/json'
+          }
+        });
+
+        if (!resultResp.ok) continue;
+
+        const data = await resultResp.json();
+        if (data.status === 'processing') continue;
+        resultData = data;
+        break;
       }
     }
 
-    const jobId = submitData.job_id;
-    if (!jobId) {
-      return json({ error: 'No job_id returned', raw: submitData }, 502);
+    if (!resultData) {
+      return json({ error: 'Zillow timed out — property data not ready' }, 504);
     }
 
-    // Step 2: Poll for results (up to ~25s with backoff)
-    const delays = [2000, 3000, 4000, 5000, 6000, 5000];
-    for (const delay of delays) {
-      await sleep(delay);
+    const good = (resultData.results || []).filter(r => r.success && r.property);
 
-      const resultResp = await fetch(`https://${HOST}/v1/results/${jobId}`, {
-        headers: {
-          'X-RapidAPI-Key': apiKey,
-          'X-RapidAPI-Host': HOST,
-          'Accept': 'application/json'
-        }
-      });
-
-      if (!resultResp.ok) continue;
-
-      const resultData = await resultResp.json();
-
-      if (resultData.status === 'processing') continue;
-
-      if (resultData.status === 'complete' && resultData.results?.length > 0) {
-        const first = resultData.results[0];
-        if (first.success && first.property) {
-          const normalized = normalizeProperty(first.property, address);
-          return json({ source: HOST, raw: first.property, property: normalized });
-        }
-      }
-
-      // failed or empty
+    if (good.length === 0) {
       return json({ error: 'Zillow property not found', raw: resultData }, 404);
     }
 
-    return json({ error: 'Zillow timed out — property data not ready' }, 504);
+    if (isSearch) {
+      const properties = good.map(r => normalizeProperty(r.property, ''));
+      const resp = json({ source: HOST, count: properties.length, properties });
+      resp.headers.set('Cache-Control', 'public, s-maxage=21600'); // 6h edge cache
+      const cache = caches.default;
+      context.waitUntil(cache.put(new Request(url.toString(), { method: 'GET' }), resp.clone()));
+      return resp;
+    }
+
+    const first = good[0];
+    return json({ source: HOST, raw: first.property, property: normalizeProperty(first.property, address) });
 
   } catch (e) {
     return json({ error: e.message }, 502);
