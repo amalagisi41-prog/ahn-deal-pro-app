@@ -732,7 +732,7 @@ input[type=hidden]{display:none}
         <div style="font-size:0.52rem;color:var(--muted);font-weight:600;margin-top:1px">CT YOY</div>
       </div>
     </div>
-    <div style="font-size:0.58rem;color:var(--muted2);margin-top:7px;text-align:center">CT Market · Updated Jun 2025 · Enter your Claude key in Settings for live AI analysis</div>
+    <div style="font-size:0.58rem;color:var(--muted2);margin-top:7px;text-align:center">CT Market · Updated Jun 2025 · AI-powered analysis active</div>
   </div>
 
   <!-- SEARCH BAR (merged from Search tab) -->
@@ -3210,37 +3210,6 @@ Requirements: use realistic CT street names and ZIP codes. Include accurate lat/
 
   try {
     setStatusMsg('Claude is analyzing…','Processing investment metrics for each property');
-    const resp2check = null; // proxy handles auth
-    if(false){
-      // Address lookup fallback (unreachable — kept for structure)
-      if(addressMode){
-        const parts = raw.split(',');
-        const street = parts[0].trim();
-        const cityState = parts.slice(1).join(',').trim() || 'Stamford, CT';
-        const refs = getFallbackListings(raw);
-        const addrHash = raw.split('').reduce((h,c)=>((h*31)+c.charCodeAt(0))&0xffff,0);
-        const ref = refs[addrHash % refs.length];
-        const synthetic = scoreListingFull({
-          address: street, city: cityState,
-          price: ref.price, beds: ref.beds, baths: ref.baths, sqft: ref.sqft,
-          type: ref.type, yearBuilt: ref.yearBuilt,
-          estimatedRent: ref.estimatedRent, propertyTax: ref.propertyTax, hoa: 0,
-          daysOnMarket: 0, status: 'Address Lookup',
-          highlights: 'Estimated investment profile — add your Claude API key in Settings for a real AI analysis.',
-          assessedValue: Math.round(ref.price*0.85),
-          lastSalePrice: ref.lastSalePrice||null, lastSaleDate: ref.lastSaleDate||null,
-          lotSize: ref.lotSize||null, walkScore: ref.walkScore||null, schoolRating: ref.schoolRating||null,
-          neighborhood: ref.neighborhood||null, comparableSales: ref.comparableSales||null,
-          investmentNote: ref.investmentNote||null,
-          lat: lastSelectedLat||null, lng: lastSelectedLng||null
-        });
-        searchResults = [synthetic];
-        document.getElementById('srch-status').style.display='none';hideAgent();
-        renderResults([synthetic]);
-        showNoKeyBanner();
-        return;
-      }
-    }
     const resp = await fetch('/api/claude',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -3615,7 +3584,6 @@ async function generatePropertyPhotos(property){
   }
 
   try{
-    if(!apiKey) return [];
 
     const prompt = generatePhotosPrompt(property);
     const resp = await fetch('/api/claude', {
@@ -3687,15 +3655,6 @@ async function generateComparableProperties(property){
   }
 
   try{
-    if(!apiKey){
-      // Return plausible fallback comps based on property price
-      const base = property.price || 500000;
-      return [
-        {address: '12 Birchwood Ct', price: Math.round(base*0.95), beds: property.beds||3, baths: property.baths||2, saleDate:'2024-09-15', daysOnMarket:14},
-        {address: '88 Elm Ridge Rd', price: Math.round(base*1.03), beds: property.beds||3, baths: property.baths||2, saleDate:'2024-11-02', daysOnMarket:8},
-        {address: '203 Harvest Lane', price: Math.round(base*0.98), beds: property.beds||3, baths: property.baths||2, saleDate:'2025-01-20', daysOnMarket:22},
-      ];
-    }
 
     const prompt = generateCompsPrompt(property);
     const resp = await fetch('/api/claude', {
