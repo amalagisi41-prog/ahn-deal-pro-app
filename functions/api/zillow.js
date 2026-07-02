@@ -1,100 +1,134 @@
-// Cloudflare Pages Function — Zillow Scraper proxy
-// Set ZILLOW_SCRAPER_KEY in Cloudflare Pages > Settings > Environment Variables
-// Supports RapidAPI Zillow scrapers: zillow-working-api, zillow56, zillowcom-api
+// Cloudflare Pages Function — Zillow Property Data proxy (Chopper Te async API)
+// Set ZILLOW_SCRAPER_KEY or Zillow_prop in Cloudflare Pages env vars
+
+const HOST = 'zillow-property-data1.p.rapidapi.com';
 
 export async function onRequestGet(context) {
-  const apiKey = context.env.ZILLOW_SCRAPER_KEY;
+  const apiKey = context.env.ZILLOW_SCRAPER_KEY || context.env.Zillow_prop;
   if (!apiKey) {
     return json({ error: 'Zillow API not configured' }, 503);
   }
 
   const url = new URL(context.request.url);
-  const address = url.searchParams.get('address');
-  const zpid = url.searchParams.get('zpid');
-  const action = url.searchParams.get('action') || 'property'; // property | search | zestimate
+  const address = url.searchParams.get('address') || '';
 
-  // Try primary host, fall back to secondary
-  const hosts = [
-    'zillow-working-api.p.rapidapi.com',
-    'zillow56.p.rapidapi.com',
-    'zillowcom-api.p.rapidapi.com'
-  ];
-
-  // Build endpoint based on action
-  function buildUrl(host, action, address, zpid) {
-    const enc = encodeURIComponent(address || '');
-    switch(action) {
-      case 'search':
-        if (host.includes('zillow56')) return `https://${host}/search?location=${enc}`;
-        if (host.includes('zillowcom')) return `https://${host}/properties/search?address=${enc}`;
-        return `https://${host}/pro/byaddress?propertyaddress=${enc}`;
-      case 'zestimate':
-        if (zpid) return `https://${host}/pro/zestimate?zpid=${zpid}`;
-        return `https://${host}/pro/byaddress?propertyaddress=${enc}`;
-      default:
-        if (host.includes('zillow56')) return `https://${host}/pro/byaddress?propertyaddress=${enc}`;
-        if (host.includes('zillowcom')) return `https://${host}/properties/detail?address=${enc}`;
-        return `https://${host}/pro/byaddress?propertyaddress=${enc}`;
-    }
+  if (!address) {
+    return json({ error: 'address parameter required' }, 400);
   }
 
-  for (const host of hosts) {
-    try {
-      const endpoint = buildUrl(host, action, address, zpid);
-      const resp = await fetch(endpoint, {
+  // Convert address to Zillow-style search URL
+  const zillowUrl = addressToZillowUrl(address);
+
+  try {
+    // Step 1: Submit scrape job
+    const submitResp = await fetch(`https://${HOST}/v1/getPropertyData`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-RapidAPI-Key': apiKey,
+        'X-RapidAPI-Host': HOST
+      },
+      body: JSON.stringify({ urls: [zillowUrl] })
+    });
+
+    if (!submitResp.ok) {
+      const err = await submitResp.text();
+      return json({ error: `Zillow submit failed: ${submitResp.status} ${err}` }, submitResp.status);
+    }
+
+    const submitData = await submitResp.json();
+    const jobId = submitData.job_id;
+
+    if (!jobId) {
+      return json({ error: 'No job_id returned', raw: submitData }, 502);
+    }
+
+    // Step 2: Poll for results (up to ~25s with backoff)
+    const delays = [2000, 3000, 4000, 5000, 6000, 5000];
+    for (const delay of delays) {
+      await sleep(delay);
+
+      const resultResp = await fetch(`https://${HOST}/v1/results/${jobId}`, {
         headers: {
           'X-RapidAPI-Key': apiKey,
-          'X-RapidAPI-Host': host,
+          'X-RapidAPI-Host': HOST,
           'Accept': 'application/json'
         }
       });
 
-      if (resp.status === 403 || resp.status === 404) continue; // wrong host, try next
+      if (!resultResp.ok) continue;
 
-      const data = await resp.json();
-      if (data?.message?.includes('not subscribed') || data?.message?.includes('not found')) continue;
+      const resultData = await resultResp.json();
 
-      // Normalize response into a consistent shape
-      const normalized = normalizeZillowResponse(data, address);
-      return json({ source: host, raw: data, property: normalized }, resp.status);
+      if (resultData.status === 'processing') continue;
 
-    } catch (e) {
-      continue; // try next host
+      if (resultData.status === 'complete' && resultData.results?.length > 0) {
+        const first = resultData.results[0];
+        if (first.success && first.property) {
+          const normalized = normalizeProperty(first.property, address);
+          return json({ source: HOST, raw: first.property, property: normalized });
+        }
+      }
+
+      // failed or empty
+      return json({ error: 'Zillow property not found', raw: resultData }, 404);
     }
-  }
 
-  return json({ error: 'Zillow property not found or API limit reached' }, 404);
+    return json({ error: 'Zillow timed out — property data not ready' }, 504);
+
+  } catch (e) {
+    return json({ error: e.message }, 502);
+  }
 }
 
-function normalizeZillowResponse(data, address) {
-  // Handle various Zillow API response shapes
-  const p = data?.property || data?.propertyDetails || data?.data?.property || data || {};
-  const hdp = p?.hdpData?.homeInfo || p?.homeInfo || p;
+function addressToZillowUrl(address) {
+  // Format: https://www.zillow.com/homes/123-Main-St-Stamford-CT-06902_rb/
+  const slug = address
+    .replace(/,/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/[^a-zA-Z0-9-]/g, '');
+  return `https://www.zillow.com/homes/${slug}_rb/`;
+}
 
+function normalizeProperty(p, address) {
   return {
-    zpid: p.zpid || hdp.zpid,
-    address: p.address || address,
-    price: p.price || p.listPrice || hdp.price || hdp.listPrice,
-    zestimate: p.zestimate || hdp.zestimate,
-    rentZestimate: p.rentZestimate || hdp.rentZestimate,
-    beds: p.bedrooms || p.beds || hdp.bedrooms,
-    baths: p.bathrooms || p.baths || hdp.bathrooms,
-    sqft: p.livingArea || p.sqft || hdp.livingArea,
-    lotSize: p.lotSize || hdp.lotSize,
-    yearBuilt: p.yearBuilt || hdp.yearBuilt,
-    propertyType: p.propertyType || p.homeType || hdp.homeType,
-    daysOnMarket: p.daysOnZillow || p.daysOnMarket || hdp.daysOnZillow,
-    status: p.homeStatus || p.status || hdp.homeStatus,
-    photos: (p.originalPhotos || p.photos || []).slice(0, 8).map(ph => ph?.mixedSources?.jpeg?.[0]?.url || ph?.url || ph),
+    zpid: p.zpid,
+    address: p.street_address || address,
+    city: p.city,
+    state: p.state,
+    zip: p.zipcode,
+    price: p.price || p.last_sold_price,
+    zestimate: p.zestimate,
+    rentZestimate: p.rent_zestimate,
+    assessedValue: p.tax_assessed_value,
+    beds: p.bedrooms,
+    baths: p.bathrooms,
+    sqft: p.living_area,
+    lotSize: p.lot_size,
+    yearBuilt: p.year_built,
+    stories: p.stories,
+    propertyType: p.property_type,
+    status: p.home_status,
+    hoa: p.hoa_fee,
+    daysOnMarket: p.days_on_zillow,
     description: p.description,
-    priceHistory: p.priceHistory,
-    taxHistory: p.taxHistory,
-    schools: p.schools,
-    walkscore: p.walkScore,
-    lat: p.latitude || hdp.latitude,
-    lng: p.longitude || hdp.longitude,
-    url: p.hdpUrl ? `https://zillow.com${p.hdpUrl}` : null
+    photos: (p.image_urls || []).slice(0, 8),
+    priceHistory: p.price_history,
+    taxHistory: p.tax_history,
+    schools: p.nearby_schools,
+    interiorFeatures: p.interior_features,
+    exteriorFeatures: p.exterior_features,
+    agent: p.listing_agent,
+    broker: p.listing_broker,
+    virtualTour: p.virtual_tour_url,
+    lat: p.latitude,
+    lng: p.longitude,
+    url: p.url
   };
+}
+
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
 }
 
 function json(data, status = 200) {
