@@ -3144,24 +3144,54 @@ Generate a single realistic property listing that could match this MLS number in
 Make it realistic for Connecticut market 2025. Return ONLY the JSON object.`;
   } else if(addressMode){
     parseMode = 'single';
+    setStatusMsg('Fetching Zillow data…','Looking up real listing data for this address');
+
+    // Try Zillow proxy first for real property data
+    let zillowData = null;
+    try {
+      const zResp = await fetch(`/api/zillow?address=${encodeURIComponent(raw)}&action=property`);
+      if(zResp.ok){
+        const zJson = await zResp.json();
+        if(zJson.property && (zJson.property.price || zJson.property.zestimate)) {
+          zillowData = zJson.property;
+        }
+      }
+    } catch(ze){ console.warn('Zillow fetch skipped:', ze); }
+
     setStatusMsg('Analyzing '+raw+'…','Estimating market rent, taxes, and investment metrics');
+
+    const zContext = zillowData ? `
+Real Zillow data for this property:
+- List Price: ${zillowData.price ? '$'+zillowData.price.toLocaleString() : 'unknown'}
+- Zestimate: ${zillowData.zestimate ? '$'+zillowData.zestimate.toLocaleString() : 'unknown'}
+- Rent Zestimate: ${zillowData.rentZestimate ? '$'+zillowData.rentZestimate.toLocaleString()+'/mo' : 'unknown'}
+- Beds: ${zillowData.beds || 'unknown'}, Baths: ${zillowData.baths || 'unknown'}
+- Sqft: ${zillowData.sqft || 'unknown'}
+- Year Built: ${zillowData.yearBuilt || 'unknown'}
+- Property Type: ${zillowData.propertyType || 'unknown'}
+- Days on Market: ${zillowData.daysOnMarket || 'unknown'}
+- Status: ${zillowData.status || 'unknown'}
+Use this real data as the foundation for your analysis. Fill in estimated fields only where data is missing.` : 'No live Zillow data available — use your knowledge of the CT market.';
+
     prompt = `You are a Connecticut real estate investment analyst. Analyze this property address for investment potential: "${raw}"
+
+${zContext}
 
 Return ONLY a valid JSON object (no markdown) with this structure:
 {
   "address": "${raw.split(',')[0].trim()}",
   "city": "${raw.split(',').slice(1).join(',').trim()||'Connecticut'}",
-  "price": estimated_market_value,
-  "beds": estimated_beds,
-  "baths": estimated_baths,
-  "sqft": estimated_sqft,
+  "price": price_number,
+  "beds": beds_number,
+  "baths": baths_number,
+  "sqft": sqft_number,
   "type": "property type",
-  "yearBuilt": estimated_year,
-  "estimatedRent": monthly_rent_estimate,
-  "propertyTax": annual_tax_estimate,
+  "yearBuilt": year_number,
+  "estimatedRent": monthly_rent_number,
+  "propertyTax": annual_tax_number,
   "hoa": 0,
-  "daysOnMarket": 0,
-  "status": "Address Lookup",
+  "daysOnMarket": days_number_or_0,
+  "status": "Active|Address Lookup",
   "highlights": "Investment analysis summary for this address and neighborhood",
   "investmentNote": "Claude's specific investment take: why this location/price point is or isn't compelling",
   "neighborhood": "neighborhood description",
@@ -3234,6 +3264,28 @@ Requirements: use realistic CT street names and ZIP codes. Include accurate lat/
     if(parseMode==='single'){
       let listing;
       try{ listing = JSON.parse(clean); } catch(e){ listing = getFallbackListings(raw)[0]; }
+      // Merge real Zillow data over Claude's estimates where available
+      if(zillowData){
+        if(zillowData.price)         listing.price        = zillowData.price;
+        if(zillowData.zestimate)     listing.zestimate    = zillowData.zestimate;
+        if(zillowData.rentZestimate) listing.estimatedRent= zillowData.rentZestimate;
+        if(zillowData.beds)          listing.beds         = zillowData.beds;
+        if(zillowData.baths)         listing.baths        = zillowData.baths;
+        if(zillowData.sqft)          listing.sqft         = zillowData.sqft;
+        if(zillowData.yearBuilt)     listing.yearBuilt    = zillowData.yearBuilt;
+        if(zillowData.propertyType)  listing.type         = zillowData.propertyType;
+        if(zillowData.daysOnMarket)  listing.daysOnMarket = zillowData.daysOnMarket;
+        if(zillowData.status)        listing.status       = zillowData.status;
+        if(zillowData.lat)           listing.lat          = zillowData.lat;
+        if(zillowData.lng)           listing.lng          = zillowData.lng;
+        if(zillowData.zpid)          listing.zpid         = zillowData.zpid;
+        if(zillowData.url)           listing.zillowUrl    = zillowData.url;
+        // Use first Zillow photo as card photo
+        const firstPhoto = zillowData.photos?.[0];
+        if(firstPhoto) listing.photoUrl = typeof firstPhoto==='string' ? firstPhoto : firstPhoto?.url || firstPhoto;
+        listing.zillowPhotos = zillowData.photos || [];
+        listing.dataSource = 'Zillow + AI Analysis';
+      }
       listing = scoreListingFull(listing);
       searchResults = [listing];
       renderResults([listing]);
@@ -3943,6 +3995,13 @@ function renderListingCard(l, idx){
     l.nearbyAmenities&& ['Nearby',           l.nearbyAmenities],
   ].filter(Boolean);
 
+  // Zillow photo strip (up to 4 extra photos)
+  const zPhotos = (l.zillowPhotos||[]).slice(1,5);
+  const zPhotoStrip = zPhotos.length ? `<div style="display:flex;gap:4px;padding:0 12px 10px;overflow-x:auto">${zPhotos.map(p=>{const u=typeof p==='string'?p:p?.url||p;return u?`<img src="${u}" style="height:60px;width:80px;object-fit:cover;border-radius:6px;flex-shrink:0" loading="lazy">`:''}).join('')}</div>` : '';
+
+  // Zillow link badge
+  const zillowBadge = l.zillowUrl ? `<a href="${l.zillowUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;font-size:0.6rem;font-weight:700;color:#006aff;text-decoration:none;background:rgba(0,106,255,0.1);padding:3px 9px;border-radius:20px;margin-top:4px">🏠 View on Zillow</a>` : '';
+
   const miniMapHtml = (l.lat && l.lng)
     ? `<div id="lc-map-${idx}" style="width:100%;height:160px;border-radius:8px;overflow:hidden;margin-bottom:12px;background:#1a2744"></div>`
     : '';
@@ -3980,8 +4039,11 @@ function renderListingCard(l, idx){
         <span style="font-size:0.58rem;font-weight:800;color:${l.signalColor};background:rgba(255,255,255,0.07);padding:2px 8px;border-radius:20px;letter-spacing:.04em">Grade ${l.grade}</span>
         <span style="font-size:0.58rem;font-weight:700;color:${l.signalColor};letter-spacing:.04em">${l.signal}</span>
       </div>`:''}
+      ${l.dataSource?`<div style="font-size:0.58rem;color:var(--muted);margin-top:4px;padding:0 2px">📡 ${l.dataSource}</div>`:''}
+      ${zillowBadge}
     </div>
   </div>
+  ${zPhotoStrip}
 
   <!-- Expanded details panel -->
   <div id="lc-expand-${idx}" style="display:none;padding:0 14px 6px">
