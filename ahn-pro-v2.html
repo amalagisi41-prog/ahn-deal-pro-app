@@ -28,75 +28,126 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --navy:#0f1f38;--navy2:#162840;--navy3:#1c3250;--navy4:#1e3a5c;
-  --card:#1a2e4a;--card2:#1f3554;--card3:#243d60;
-  --teal:#2ecfad;--teal2:#25b898;--teal-f:rgba(46,207,173,0.12);--teal-f2:rgba(46,207,173,0.2);
-  --white:#fff;--off:#e8edf5;--muted:rgba(255,255,255,0.5);--muted2:rgba(255,255,255,0.28);
-  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.13);
-  --green:#2ecfad;--red:#ff5e5e;--red-f:rgba(255,94,94,0.14);
-  --amber:#f0b429;--amber-f:rgba(240,180,41,0.14);
-  --r:14px;--r2:10px;--tab-h:68px;
-  /* PWA safe areas for iPhone notch + home bar */
-  --shadow:0 2px 12px rgba(0,0,0,0.25);
+  /* ── LIGHT (default) ── */
+  --navy:#f8f9fb;--navy2:#f0f2f6;--navy3:#e8ecf3;--navy4:#dde3ee;
+  --card:#ffffff;--card2:#f5f6f9;--card3:#edf0f7;
+  --sidebar:#1a1f2e;--sidebar2:#242a3a;--sidebar-border:rgba(255,255,255,0.07);
+  --teal:#16a37f;--teal2:#128f6e;--teal-f:rgba(22,163,127,0.09);--teal-f2:rgba(22,163,127,0.15);
+  --white:#111827;--off:#374151;--muted:rgba(17,24,39,0.45);--muted2:rgba(17,24,39,0.28);
+  --border:rgba(0,0,0,0.07);--border2:rgba(0,0,0,0.11);
+  --green:#16a37f;--red:#dc2626;--red-f:rgba(220,38,38,0.08);
+  --amber:#d97706;--amber-f:rgba(217,119,6,0.09);
+  --r:12px;--r2:8px;--tab-h:0px;--sidebar-w:220px;
+  --shadow:0 1px 4px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.06);
   --sat: env(safe-area-inset-top, 0px);
   --sab: env(safe-area-inset-bottom, 0px);
   --sal: env(safe-area-inset-left, 0px);
   --sar: env(safe-area-inset-right, 0px);
 }
-/* ── LIGHT MODE OVERRIDES ── */
-body.light{
-  --navy:#f0f4f8;--navy2:#e8eef7;--navy3:#dde6f3;--navy4:#d4dfee;
-  --card:#ffffff;--card2:#f4f7fc;--card3:#edf1f9;
-  --white:#0f1f38;--off:#1a2e4a;--muted:rgba(15,31,56,0.5);--muted2:rgba(15,31,56,0.3);
-  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.13);
-  --teal-f:rgba(46,207,173,0.10);--teal-f2:rgba(46,207,173,0.15);
-  --red-f:rgba(255,94,94,0.10);--amber-f:rgba(240,180,41,0.10);
-  --shadow:0 2px 12px rgba(0,0,0,0.10);
+/* ── DARK MODE ── */
+body.dark{
+  --navy:#0f1117;--navy2:#161b27;--navy3:#1c2235;--navy4:#1e2a40;
+  --card:#1a2035;--card2:#1f2740;--card3:#243050;
+  --sidebar:#0d1117;--sidebar2:#161b27;--sidebar-border:rgba(255,255,255,0.07);
+  --teal:#2ecfad;--teal2:#25b898;--teal-f:rgba(46,207,173,0.12);--teal-f2:rgba(46,207,173,0.2);
+  --white:#f1f5f9;--off:#cbd5e1;--muted:rgba(241,245,249,0.5);--muted2:rgba(241,245,249,0.28);
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --green:#2ecfad;--red:#f87171;--red-f:rgba(248,113,113,0.14);
+  --amber:#fbbf24;--amber-f:rgba(251,191,36,0.14);
+  --shadow:0 2px 12px rgba(0,0,0,0.35);
 }
-body.light .tab-strip{background:rgba(0,0,0,0.07)}
-body.light .tsb.on{box-shadow:0 2px 8px rgba(0,0,0,0.12)}
-body.light input[type=range]{background:linear-gradient(to right,var(--teal) 0%,var(--teal) var(--pct,0%),rgba(0,0,0,0.12) var(--pct,0%),rgba(0,0,0,0.12) 100%)}
-body.light .sbtn{color:var(--white)}
-body.light .exinp{background:rgba(0,0,0,0.04);color:var(--white)}
-body.light .settings-toggle{background:rgba(0,0,0,0.05);color:var(--off)}
-body.light .app-add-btn{color:#fff}
-body.light .hdr-icon svg path{fill:#0f1f38}
+body.dark input[type=range]{background:linear-gradient(to right,var(--teal) 0%,var(--teal) var(--pct,0%),rgba(255,255,255,0.14) var(--pct,0%),rgba(255,255,255,0.14) 100%)}
+body.dark .sbtn{color:var(--white)}
+body.dark .exinp{background:rgba(255,255,255,0.07);color:var(--white)}
+body.dark .settings-toggle{background:rgba(255,255,255,0.06);color:var(--off)}
+body.dark .app-add-btn{color:#fff}
+body.dark .sidebar{background:var(--sidebar);border-right-color:var(--sidebar-border)}
+body.dark .snav-item{color:rgba(255,255,255,0.5)}
+body.dark .snav-item:hover,.body.dark .snav-item.active{background:rgba(255,255,255,0.07);color:#fff}
+body.dark .snav-item.active{background:rgba(46,207,173,0.15);color:var(--teal)}
+body.dark .top-bar{background:var(--navy2);border-bottom-color:var(--border)}
+body.dark .agent-pill{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.1)}
+/* Light mode range */
+input[type=range]{background:linear-gradient(to right,var(--teal) 0%,var(--teal) var(--pct,0%),rgba(0,0,0,0.12) var(--pct,0%),rgba(0,0,0,0.12) 100%)}
 
 /* ── THEME TOGGLE BUTTON ── */
 .theme-toggle{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--border2);background:var(--card2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;-webkit-tap-highlight-color:transparent;transition:all 0.2s;margin-top:2px}
 .theme-toggle:active{opacity:0.7}
 
 html,body{height:100%;overflow:hidden;-webkit-font-smoothing:antialiased}
-body{font-family:"Inter",-apple-system,sans-serif;background:var(--navy);color:var(--white);display:flex;flex-direction:column;transition:background 0.25s,color 0.25s;
-  /* Extend background into status bar on iPhone */
-  padding-top:var(--sat);
-}
+body{font-family:"Inter",-apple-system,sans-serif;background:var(--navy);color:var(--white);display:flex;flex-direction:row;transition:background 0.22s,color 0.22s;padding-top:var(--sat)}
 
-/* ── HEADER ── */
-.hdr{padding:14px 18px 10px;display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0}
-.hdr-left{display:flex;flex-direction:column;gap:2px}
-.hdr-title{font-size:1.6rem;font-weight:800;letter-spacing:-0.03em;line-height:1}
-.hdr-sub{font-size:0.65rem;color:var(--muted);font-weight:500;letter-spacing:0.03em;text-transform:uppercase}
-.hdr-brand{display:flex;align-items:center;gap:7px;text-decoration:none}
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);height:100%;display:flex;flex-direction:column;background:#1a1f2e;border-right:1px solid rgba(255,255,255,0.06);flex-shrink:0;transition:width 0.2s;z-index:100;overflow:hidden}
+.sidebar-logo{display:flex;align-items:center;gap:10px;padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sidebar-logo-icon{width:32px;height:32px;background:var(--teal);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sidebar-logo-text{font-size:0.82rem;font-weight:700;color:#fff;line-height:1.2}
+.sidebar-logo-sub{font-size:0.6rem;color:rgba(255,255,255,0.4);font-weight:500;margin-top:1px}
+.snav{flex:1;overflow-y:auto;padding:12px 8px;display:flex;flex-direction:column;gap:2px}
+.snav::-webkit-scrollbar{display:none}
+.snav-section{font-size:0.57rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.25);padding:10px 8px 4px;margin-top:4px}
+.snav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:all 0.15s;color:rgba(255,255,255,0.5);font-size:0.78rem;font-weight:500;border:none;background:none;font-family:inherit;width:100%;text-align:left;-webkit-tap-highlight-color:transparent}
+.snav-item:hover{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.85)}
+.snav-item.active{background:rgba(22,163,127,0.18);color:#2ecfad;font-weight:600}
+.snav-icon{width:16px;height:16px;flex-shrink:0;opacity:0.7}
+.snav-item.active .snav-icon{opacity:1}
+.snav-footer{padding:12px 8px;border-top:1px solid rgba(255,255,255,0.06)}
+.sidebar-toggle{display:none;position:fixed;top:14px;left:14px;z-index:200;width:36px;height:36px;border-radius:8px;background:var(--card);border:1px solid var(--border2);align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow)}
+
+/* ── MAIN AREA ── */
+.main-area{flex:1;min-width:0;display:flex;flex-direction:column;height:100%;overflow:hidden}
+
+/* ── TOP BAR ── */
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--border);flex-shrink:0;gap:12px;min-height:56px}
+.top-bar-left{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+.top-bar-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.agent-pill{display:inline-flex;align-items:center;gap:7px;padding:5px 12px 5px 8px;background:rgba(22,163,127,0.08);border:1px solid rgba(22,163,127,0.2);border-radius:999px;font-size:0.72rem;font-weight:600;color:var(--teal);cursor:default;transition:all 0.2s}
+.agent-pill.running{background:rgba(22,163,127,0.12);border-color:rgba(22,163,127,0.3)}
+.agent-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);flex-shrink:0}
+.agent-dot.pulse{animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.8)}}
+.agent-spinner{width:14px;height:14px;border:1.5px solid rgba(22,163,127,0.25);border-top-color:var(--teal);border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.page-title-top{font-size:0.9rem;font-weight:700;color:var(--white);letter-spacing:-0.01em}
+.theme-toggle{width:32px;height:32px;border-radius:8px;border:1px solid var(--border2);background:var(--card2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;-webkit-tap-highlight-color:transparent;transition:all 0.2s;color:var(--muted)}
+.theme-toggle:hover{border-color:var(--teal);color:var(--teal)}
 .hdr-icon{width:32px;height:32px;background:var(--card2);border-radius:8px;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center}
-.app-cta-row{position:sticky;top:0;z-index:20;padding:8px 2px 10px;background:var(--navy)}
-.app-add-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:11px 12px;border-radius:var(--r2);background:linear-gradient(135deg,var(--teal),var(--teal2));border:none;font-family:inherit;font-size:0.78rem;font-weight:800;color:var(--navy);cursor:pointer;letter-spacing:-0.01em;-webkit-tap-highlight-color:transparent;box-shadow:0 6px 16px rgba(0,0,0,0.2)}
+
+/* ── SCROLL BODY ── */
+.body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;padding:16px 20px 20px}
+.body::-webkit-scrollbar{width:4px}
+.body::-webkit-scrollbar-track{background:transparent}
+.body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+/* ── APP-LEVEL HEADER kept for compat ── */
+.hdr{display:none}
+.hdr-left,.hdr-title,.hdr-sub,.hdr-brand{display:none}
+.app-cta-row{position:sticky;top:0;z-index:20;padding:0 0 12px;background:var(--navy)}
+.app-add-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:11px 12px;border-radius:var(--r2);background:linear-gradient(135deg,var(--teal),var(--teal2));border:none;font-family:inherit;font-size:0.78rem;font-weight:700;color:#fff;cursor:pointer;letter-spacing:-0.01em;-webkit-tap-highlight-color:transparent;box-shadow:0 4px 12px rgba(22,163,127,0.3)}
 .app-add-btn:active{opacity:0.9}
 .settings-toolbar{display:flex;align-items:center;gap:8px;padding:10px 0 8px}
-.settings-toggle{background:rgba(255,255,255,0.06);border:1px solid var(--border2);border-radius:999px;padding:7px 12px;font-family:inherit;font-size:0.72rem;font-weight:700;color:var(--off);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.settings-toggle{background:var(--card2);border:1px solid var(--border2);border-radius:999px;padding:7px 12px;font-family:inherit;font-size:0.72rem;font-weight:700;color:var(--off);cursor:pointer;-webkit-tap-highlight-color:transparent}
 .settings-summary{font-size:0.7rem;color:var(--muted);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .settings-panel{display:block}
 .settings-panel.hidden{display:none}
 
-/* ── SCROLL BODY ── */
-.body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;padding:0 14px;padding-bottom:calc(var(--tab-h)+20px)}
-.body::-webkit-scrollbar{display:none}
-
-/* ── TAB STRIP (top nav) ── */
-.tab-strip{display:flex;background:rgba(0,0,0,0.25);border-radius:12px;padding:3px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;gap:2px}
+/* ── TAB STRIP (inside body, kept for compat) ── */
+.tab-strip{display:flex;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:3px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;gap:2px}
 .tab-strip::-webkit-scrollbar{display:none}
-.tsb{flex:0 0 auto;height:36px;padding:0 14px;border:none;border-radius:10px;font-family:inherit;font-size:0.73rem;font-weight:700;cursor:pointer;transition:all 0.18s;color:var(--muted);background:none;letter-spacing:-0.01em;white-space:nowrap}
-.tsb.on{background:var(--card2);color:var(--white);box-shadow:0 2px 8px rgba(0,0,0,0.3)}
+.tsb{flex:0 0 auto;height:32px;padding:0 12px;border:none;border-radius:7px;font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer;transition:all 0.15s;color:var(--muted);background:none;letter-spacing:-0.01em;white-space:nowrap}
+.tsb.on{background:var(--card);color:var(--white);box-shadow:0 1px 4px rgba(0,0,0,0.1)}
+
+/* ── MOBILE: hide sidebar, show hamburger ── */
+@media(max-width:768px){
+  .sidebar{position:fixed;left:-100%;top:0;bottom:0;width:240px;transition:left 0.25s;box-shadow:4px 0 24px rgba(0,0,0,0.2)}
+  .sidebar.open{left:0}
+  .sidebar-toggle{display:flex}
+  .main-area{width:100%}
+  .body{padding:12px 14px 80px}
+  .top-bar{padding:10px 14px 10px 58px}
+  /* Keep bottom tab bar on mobile */
+  .btab{display:flex !important}
+}
 
 /* ── VERDICT ── */
 .verdict{border-radius:var(--r);padding:18px;margin-bottom:12px;transition:all 0.3s}
@@ -152,7 +203,7 @@ body{font-family:"Inter",-apple-system,sans-serif;background:var(--navy);color:v
 .sec{margin-bottom:12px}
 .sec-hdr{font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;padding:0 2px;display:flex;justify-content:space-between;align-items:center}
 .sec-rst{font-size:0.65rem;color:var(--teal);background:none;border:none;cursor:pointer;font-family:inherit;font-weight:700}
-.icard{background:var(--card);border:1px solid var(--border2);border-radius:var(--r);overflow:hidden}
+.icard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
 .slrow{padding:13px 15px;border-bottom:1px solid var(--border)}
 .slrow:last-child{border-bottom:none}
 .sl-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px}
@@ -294,7 +345,7 @@ input[type=number]:focus{color:var(--teal)}
 .cta-arr{width:32px;height:32px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--navy);font-size:0.95rem;font-weight:800}
 
 /* ── BOTTOM TAB ── */
-.btab{height:calc(var(--tab-h) + var(--sab));flex-shrink:0;background:var(--navy2);border-top:1px solid var(--border2);display:flex;align-items:flex-start;justify-content:space-around;padding:0 4px;padding-bottom:var(--sab);overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+.btab{height:calc(68px + var(--sab));flex-shrink:0;background:var(--card);border-top:1px solid var(--border);display:none;align-items:flex-start;justify-content:space-around;padding:0 4px;padding-bottom:var(--sab);overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
 .btab::-webkit-scrollbar{display:none}
 .bti{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 4px;border-radius:9px;cursor:pointer;transition:all 0.15s;text-decoration:none;flex:1;min-width:44px;-webkit-tap-highlight-color:transparent;border:none;background:none;font-family:inherit}
 .bti:active{background:rgba(255,255,255,0.05)}
@@ -303,6 +354,8 @@ input[type=number]:focus{color:var(--teal)}
 .bti-lbl{font-size:0.55rem;font-weight:600;color:var(--muted);letter-spacing:0.01em;transition:color 0.15s}
 .bti.on .bti-lbl{color:var(--teal)}
 .bti.on .bti-icon path,.bti.on .bti-icon circle,.bti.on .bti-icon rect,.bti.on .bti-icon polyline,.bti.on .bti-icon line{stroke:var(--teal)}
+.bti-bar{width:18px;height:2px;background:var(--teal);border-radius:2px;display:none;margin-top:-1px}
+.bti.on .bti-bar{display:block}
 .bti-bar{width:18px;height:2px;background:var(--teal);border-radius:2px;display:none;margin-top:-1px}
 .bti.on .bti-bar{display:block}
 
@@ -556,34 +609,96 @@ input[type=hidden]{display:none}
   </div>
 </div>
 
-<!-- HEADER -->
-<div class="hdr">
-  <div class="hdr-left">
-    <div class="hdr-title" id="page-title">Analyze</div>
-    <div class="hdr-sub" id="page-sub">AI Property Analyzer <span style="opacity:0.45;font-size:0.55rem">v3.0</span></div>
+<!-- MOBILE HAMBURGER -->
+<button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</button>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-icon">
+      <svg width="16" height="16" viewBox="0 0 22 22" fill="none"><path d="M11 2L2 8.5V20h6v-6h6v6h6V8.5L11 2Z" fill="white" opacity="0.95"/></svg>
+    </div>
+    <div>
+      <div class="sidebar-logo-text">Deal Analyzer Pro</div>
+      <div class="sidebar-logo-sub">Artisan Home Network</div>
+    </div>
   </div>
-  <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
-    <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle light/dark mode">
-      <svg id="theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      <svg id="theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+  <nav class="snav">
+    <div class="snav-section">Analysis</div>
+    <button class="snav-item active" id="sn-analyze" onclick="goTab('analyze');closeSidebarMobile()">
+      <svg class="snav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Search Properties
     </button>
-    <a class="hdr-brand" href="./" onclick="goHome();return false;">
-      <div class="hdr-icon"><svg width="14" height="14" viewBox="0 0 22 22" fill="none"><path d="M11 2L2 8.5V20h6v-6h6v6h6V8.5L11 2Z" fill="white" opacity="0.9"/></svg></div>
-    </a>
+    <button class="snav-item" id="sn-compare" onclick="goTab('compare');closeSidebarMobile()">
+      <svg class="snav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Deal Comparison
+    </button>
+    <button class="snav-item" id="sn-strltr" onclick="goTab('strltr');closeSidebarMobile()">
+      <svg class="snav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
+      STR vs LTR
+    </button>
+    <button class="snav-item" id="sn-mortgage" onclick="goTab('mortgage');closeSidebarMobile()">
+      <svg class="snav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="6" y1="8" x2="10" y2="8"/><line x1="6" y1="11" x2="14" y2="11"/></svg>
+      Mortgage Calc
+    </button>
+    <div class="snav-section">Portfolio</div>
+    <button class="snav-item" id="sn-portfolio" onclick="goTab('portfolio');closeSidebarMobile()">
+      <svg class="snav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      My Portfolio
+    </button>
+    <button class="snav-item" id="sn-report" onclick="goTab('report');closeSidebarMobile()">
+      <svg class="snav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Deal Report
+    </button>
+    <button class="snav-item" id="sn-present" onclick="goTab('present');closeSidebarMobile()">
+      <svg class="snav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      Presentation
+    </button>
+  </nav>
+  <div class="snav-footer">
+    <button class="snav-item" id="sn-settings" onclick="goTab('settings');closeSidebarMobile()">
+      <svg class="snav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </button>
+    <div class="snav-item" onclick="loSignOut()" style="margin-top:2px">
+      <svg class="snav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign Out
+    </div>
   </div>
-  <!-- User badge (shown after login) -->
-  <div class="user-badge" id="user-badge" onclick="toggleUserMenu()">
-    <div class="user-avatar" id="user-avatar">?</div>
-    <div class="user-name" id="user-name-display">Guest</div>
-    <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round"/></svg>
-    <div class="user-menu" id="user-menu">
-      <div class="um-item" id="um-name-row" style="font-weight:700;color:var(--white);pointer-events:none">—</div>
-      <div class="um-item" id="um-company-row" style="font-size:.68rem;pointer-events:none;margin-top:-4px">—</div>
-      <div class="um-sep"></div>
-      <div class="um-item" onclick="goTab('portfolio')">📁 &nbsp;My Portfolio</div>
-      <div class="um-item" onclick="goTab('report')">📄 &nbsp;Deal Report</div>
-      <div class="um-sep"></div>
-      <div class="um-item danger" onclick="loSignOut()">Sign Out</div>
+</div>
+
+<!-- MAIN AREA -->
+<div class="main-area">
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="top-bar-left">
+    <span class="page-title-top" id="page-title">Search Properties</span>
+    <div class="agent-pill" id="agent-pill" style="display:none">
+      <div class="agent-spinner" id="agent-spinner"></div>
+      <span id="agent-label">Analyzing…</span>
+    </div>
+  </div>
+  <div class="top-bar-right">
+    <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode">
+      <svg id="theme-icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg id="theme-icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+    <div class="user-badge" id="user-badge" onclick="toggleUserMenu()">
+      <div class="user-avatar" id="user-avatar">?</div>
+      <div class="user-name" id="user-name-display">Guest</div>
+      <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/></svg>
+      <div class="user-menu" id="user-menu">
+        <div class="um-item" id="um-name-row" style="font-weight:700;color:var(--white);pointer-events:none">—</div>
+        <div class="um-item" id="um-company-row" style="font-size:.68rem;pointer-events:none;margin-top:-4px">—</div>
+        <div class="um-sep"></div>
+        <div class="um-item" onclick="goTab('portfolio')">My Portfolio</div>
+        <div class="um-item" onclick="goTab('report')">Deal Report</div>
+        <div class="um-sep"></div>
+        <div class="um-item danger" onclick="loSignOut()">Sign Out</div>
+      </div>
     </div>
   </div>
 </div>
@@ -1300,7 +1415,20 @@ input[type=hidden]{display:none}
   </button>
 </div>
 
+</div><!-- /main-area -->
+
 <script>
+/* ── AGENT PILL HELPERS ── */
+function showAgent(label){
+  const p=document.getElementById('agent-pill');
+  const l=document.getElementById('agent-label');
+  if(p){p.style.display='inline-flex';p.classList.add('running');}
+  if(l)l.textContent=label||'Analyzing…';
+}
+function hideAgent(){
+  const p=document.getElementById('agent-pill');
+  if(p){p.style.display='none';p.classList.remove('running');}
+}
 /* ── UTILS ── */
 const g=id=>parseFloat(document.getElementById(id)?.value)||0;
 const gs=id=>document.getElementById(id)?.value||'';
@@ -1327,18 +1455,17 @@ function stp(id,delta,mn,mx){const e=document.getElementById(id);if(!e)return;le
 
 /* ── NAVIGATION ── */
 const TABS=['analyze','compare','strltr','portfolio','mortgage','present','report','settings'];
+const SN_MAP={analyze:'sn-analyze',compare:'sn-compare',strltr:'sn-strltr',portfolio:'sn-portfolio',mortgage:'sn-mortgage',present:'sn-present',report:'sn-report',settings:'sn-settings'};
 function goTab(t){
-  if(t==='search') t='analyze'; // search is now inside analyze
+  if(t==='search') t='analyze';
   TABS.forEach(x=>{
     document.getElementById('tab-'+x)?.classList.toggle('hidden',x!==t);
     const b=document.getElementById('bt-'+x);if(b)b.classList.toggle('on',x===t);
+    const sn=document.getElementById(SN_MAP[x]);if(sn)sn.classList.toggle('active',x===t);
   });
-  const titles={analyze:'Search & Analyze',compare:'Compare Deals',strltr:'STR vs LTR',portfolio:'Portfolio',mortgage:'Mortgage Calculator',present:'Present',report:'Deal Report',settings:'Settings'};
-  const subs={analyze:'AI Property Finder · Deal Analyzer',compare:'Side-by-side scoring',strltr:'Same property, two strategies',portfolio:'Your properties',mortgage:'Estimate your loan & PITI',present:'Client presentation mode',report:'Branded client report',settings:'Platform configuration'};
-  document.getElementById('page-title').textContent=titles[t]||t;
-  document.getElementById('page-sub').textContent=subs[t]||'';
+  const titles={analyze:'Search Properties',compare:'Deal Comparison',strltr:'STR vs LTR Analysis',portfolio:'My Portfolio',mortgage:'Mortgage Calculator',present:'Client Presentation',report:'Deal Report',settings:'Settings'};
+  const ptEl=document.getElementById('page-title');if(ptEl)ptEl.textContent=titles[t]||t;
   document.getElementById('main-body').scrollTop=0;
-  document.getElementById('main-body').style.padding = '0 14px';
   if(t==='compare')renderCompare();
   if(t==='mortgage'){calcMortgage();}
   if(t==='strltr')cSL();
@@ -1347,17 +1474,19 @@ function goTab(t){
 }
 function goHome(){goTab('analyze');}
 function addPropAndOpenPortfolio(){goTab('portfolio'); openAddPropertyForm();}
+function toggleSidebar(){document.getElementById('sidebar')?.classList.toggle('open')}
+function closeSidebarMobile(){if(window.innerWidth<=768)document.getElementById('sidebar')?.classList.remove('open')}
 
 /* ── LIGHT / DARK THEME ── */
 function toggleTheme(){
-  const isLight=document.body.classList.toggle('light');
-  localStorage.setItem('ahn_theme',isLight?'light':'dark');
-  document.getElementById('theme-icon-moon').style.display=isLight?'none':'block';
-  document.getElementById('theme-icon-sun').style.display=isLight?'block':'none';
+  const isDark=document.body.classList.toggle('dark');
+  localStorage.setItem('ahn_theme',isDark?'dark':'light');
+  document.getElementById('theme-icon-moon').style.display=isDark?'none':'block';
+  document.getElementById('theme-icon-sun').style.display=isDark?'block':'none';
 }
 (function initTheme(){
-  if(localStorage.getItem('ahn_theme')==='light'){
-    document.body.classList.add('light');
+  if(localStorage.getItem('ahn_theme')==='dark'){
+    document.body.classList.add('dark');
     const m=document.getElementById('theme-icon-moon');
     const s=document.getElementById('theme-icon-sun');
     if(m)m.style.display='none';
@@ -2511,6 +2640,7 @@ function showNoKeyBanner(){
 function setStatusMsg(msg, sub){
   document.getElementById('srch-status-msg').textContent = msg;
   document.getElementById('srch-status-sub').textContent = sub||'';
+  if(msg) showAgent(msg); else hideAgent();
 }
 
 function initSearch(){
@@ -2942,13 +3072,13 @@ async function runSearch(){
       const raw_listings = await anyPropQuery(apId, apSecret, filter, 'PreferredMedia');
       if(raw_listings.length === 0){
         setStatusMsg('No MLS results','No active listings found — try a different search');
-        document.getElementById('srch-status').style.display='none';
+        document.getElementById('srch-status').style.display='none';hideAgent();
         document.getElementById('srch-results').innerHTML='<div style="text-align:center;padding:30px;color:var(--muted);font-size:0.8rem">No listings found in SmartMLS for that search. Try a city, ZIP, or MLS#.</div>';
         return;
       }
       listings = raw_listings.map(anyPropToListing);
       searchResults = listings;
-      document.getElementById('srch-status').style.display='none';
+      document.getElementById('srch-status').style.display='none';hideAgent();
       renderResults(listings);
       // Show MLS disclaimer if present
       const disclaimer = raw_listings[0]?.OriginatingSystemName;
@@ -3094,7 +3224,7 @@ Requirements: use realistic CT street names and ZIP codes. Include accurate lat/
           lat: lastSelectedLat||null, lng: lastSelectedLng||null
         });
         searchResults = [synthetic];
-        document.getElementById('srch-status').style.display='none';
+        document.getElementById('srch-status').style.display='none';hideAgent();
         renderResults([synthetic]);
         showNoKeyBanner();
         return;
@@ -3152,7 +3282,7 @@ Requirements: use realistic CT street names and ZIP codes. Include accurate lat/
       document.getElementById('srch-results').innerHTML='<div style="text-align:center;padding:32px;color:var(--muted);font-size:0.8rem">Search failed. Please try again.</div>';
     }
   }
-  try{ document.getElementById('srch-status').style.display='none'; } catch(e){}
+  try{ document.getElementById('srch-status').style.display='none';hideAgent(); } catch(e){}
 }
 
 function scoreListingFull(l){
