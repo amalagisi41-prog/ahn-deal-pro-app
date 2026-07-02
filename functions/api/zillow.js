@@ -16,19 +16,16 @@ export async function onRequestGet(context) {
     return json({ error: 'address parameter required' }, 400);
   }
 
-  // Convert address to Zillow-style search URL
-  const zillowUrl = addressToZillowUrl(address);
-
   try {
-    // Step 1: Submit scrape job
-    const submitResp = await fetch(`https://${HOST}/v1/getPropertyData`, {
+    // Step 1: Submit scrape job — /v1/properties accepts addresses directly
+    const submitResp = await fetch(`https://${HOST}/v1/properties`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-RapidAPI-Key': apiKey,
         'X-RapidAPI-Host': HOST
       },
-      body: JSON.stringify({ urls: [zillowUrl] })
+      body: JSON.stringify({ addresses: [address] })
     });
 
     if (!submitResp.ok) {
@@ -37,8 +34,16 @@ export async function onRequestGet(context) {
     }
 
     const submitData = await submitResp.json();
-    const jobId = submitData.job_id;
 
+    // Small requests may return results immediately
+    if (submitData.status === 'complete' && submitData.results?.length > 0) {
+      const first = submitData.results[0];
+      if (first.success && first.property) {
+        return json({ source: HOST, raw: first.property, property: normalizeProperty(first.property, address) });
+      }
+    }
+
+    const jobId = submitData.job_id;
     if (!jobId) {
       return json({ error: 'No job_id returned', raw: submitData }, 502);
     }
@@ -79,15 +84,6 @@ export async function onRequestGet(context) {
   } catch (e) {
     return json({ error: e.message }, 502);
   }
-}
-
-function addressToZillowUrl(address) {
-  // Format: https://www.zillow.com/homes/123-Main-St-Stamford-CT-06902_rb/
-  const slug = address
-    .replace(/,/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/[^a-zA-Z0-9-]/g, '');
-  return `https://www.zillow.com/homes/${slug}_rb/`;
 }
 
 function normalizeProperty(p, address) {
