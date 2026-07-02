@@ -3148,15 +3148,22 @@ Make it realistic for Connecticut market 2025. Return ONLY the JSON object.`;
 
     // Try Zillow proxy first for real property data
     let zillowData = null;
+    let zillowError = null;
     try {
       const zResp = await fetch(`/api/zillow?address=${encodeURIComponent(raw)}&action=property`);
+      const zJson = await zResp.json();
+      console.log('[Zillow] status:', zResp.status, 'response:', zJson);
       if(zResp.ok){
-        const zJson = await zResp.json();
         if(zJson.property && (zJson.property.price || zJson.property.zestimate)) {
           zillowData = zJson.property;
+        } else {
+          zillowError = zJson.error || 'Property not found in Zillow';
         }
+      } else {
+        zillowError = zJson.error || `Zillow API error ${zResp.status}`;
       }
-    } catch(ze){ console.warn('Zillow fetch skipped:', ze); }
+    } catch(ze){ zillowError = ze.message; console.warn('Zillow fetch failed:', ze); }
+    if(zillowError) console.warn('[Zillow] No data:', zillowError);
 
     setStatusMsg('Analyzing '+raw+'…','Estimating market rent, taxes, and investment metrics');
 
@@ -3265,6 +3272,7 @@ Requirements: use realistic CT street names and ZIP codes. Include accurate lat/
       let listing;
       try{ listing = JSON.parse(clean); } catch(e){ listing = getFallbackListings(raw)[0]; }
       // Merge real Zillow data over Claude's estimates where available
+      if(zillowError && !zillowData) listing.zillowError = zillowError;
       if(zillowData){
         if(zillowData.price)         listing.price        = zillowData.price;
         if(zillowData.zestimate)     listing.zestimate    = zillowData.zestimate;
@@ -4040,6 +4048,7 @@ function renderListingCard(l, idx){
         <span style="font-size:0.58rem;font-weight:700;color:${l.signalColor};letter-spacing:.04em">${l.signal}</span>
       </div>`:''}
       ${l.dataSource?`<div style="font-size:0.58rem;color:var(--muted);margin-top:4px;padding:0 2px">📡 ${l.dataSource}</div>`:''}
+      ${l.zillowError?`<div style="font-size:0.58rem;color:var(--amber);margin-top:4px;padding:0 2px" title="${l.zillowError}">⚠ Zillow: ${l.zillowError}</div>`:''}
       ${zillowBadge}
     </div>
   </div>
