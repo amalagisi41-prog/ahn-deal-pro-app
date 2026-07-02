@@ -2783,7 +2783,7 @@ async function runMapSearch(query){
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-1-20250805',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 2000,
         system: 'You are a real estate analyst. Return ONLY valid JSON (no markdown).',
         messages: [{
@@ -3214,7 +3214,7 @@ Requirements: use realistic CT street names and ZIP codes. Include accurate lat/
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        model:'claude-sonnet-4-6',
+        model:'claude-haiku-4-5-20251001',
         max_tokens: parseMode==='single' ? 1200 : 2400,
         system: 'You are a real estate investment analyst. Always respond with valid JSON only — no markdown fences, no explanation, no preamble. Just the raw JSON.',
         messages:[{role:'user',content:prompt}]
@@ -3255,12 +3255,9 @@ Requirements: use realistic CT street names and ZIP codes. Include accurate lat/
     }
   } catch(err){
     console.error('Search error:',err);
-    try{
-      searchResults = getFallbackListings(raw).map(l=>scoreListingFull(l));
-      renderResults(searchResults);
-    } catch(e2){
-      document.getElementById('srch-results').innerHTML='<div style="text-align:center;padding:32px;color:var(--muted);font-size:0.8rem">Search failed. Please try again.</div>';
-    }
+    hideAgent();
+    document.getElementById('srch-status').style.display='none';
+    document.getElementById('srch-results').innerHTML='<div style="text-align:center;padding:32px;color:var(--red);font-size:0.82rem;background:var(--red-f);border-radius:12px;margin-top:12px;border:1px solid rgba(220,38,38,0.2)"><strong>Analysis failed</strong><br><span style="color:var(--muted);font-size:0.72rem;display:block;margin-top:6px">'+err.message+'</span><br><span style="color:var(--muted);font-size:0.68rem">Check Cloudflare env vars or try again.</span></div>';
   }
   try{ document.getElementById('srch-status').style.display='none';hideAgent(); } catch(e){}
 }
@@ -3515,7 +3512,7 @@ async function enrichPropertyData(property){
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-1-20250805',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 1200,
         system: 'You are a real estate property analyst. Return ONLY valid JSON (no markdown, no explanations).',
         messages: [{role: 'user', content: prompt}]
@@ -3592,7 +3589,7 @@ async function generatePropertyPhotos(property){
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-1-20250805',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 600,
         system: 'You are a real estate photographer AI. Return ONLY valid JSON (no markdown, no explanations).',
         messages: [{role: 'user', content: prompt}]
@@ -3663,7 +3660,7 @@ async function generateComparableProperties(property){
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-1-20250805',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 800,
         system: 'You are a real estate market analyst. Return ONLY valid JSON (no markdown, no explanations).',
         messages: [{role: 'user', content: prompt}]
