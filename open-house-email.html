@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<div style="font-family: 'Inter', sans-serif; color: #2c2c2c; background-color: #F4F4F4">
+  <div style="width: 100%; max-width: 640px; margin: 0 auto; background: #fafaf7;">
+
+    <!-- Hero Image -->
+    <style>
+      @keyframes heroZoom {
+        from { transform: scale(1); }
+        to { transform: scale(1.05); }
+      }
+      .hero-image:hover { animation: heroZoom 0.6s ease-out forwards; }
+    </style>
+    <div style="width: 100%; overflow: hidden; position: relative; cursor: pointer; height: 432px; background: #e8e6e2;">
+      <img src="[PROPERTY_IMAGE_URL]" alt="Open House Property" class="hero-image" style="display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease-out;">
+      <div style="position: absolute; top: 24px; right: 24px; background: #c9a961; color: #fff; padding: 12px 24px; font-size: 14px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; border-radius: 4px;">Open House</div>
+    </div>
+
+    <!-- Header Section -->
+    <div style="padding: 56px 40px; text-align: center; border-bottom: 2px solid #c9a961; background: #fff;">
+      <p style="font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #c9a961; margin-bottom: 18px; font-weight: 400;">This Sunday</p>
+      <h1 style="font-family: 'Garamond', serif; font-size: 48px; font-weight: 400; margin-bottom: 16px; line-height: 1.2; color: #1a1a1a;">[PROPERTY_ADDRESS]</h1>
+      <p style="font-size: 18px; font-weight: 400; color: #c9a961; margin-bottom: 24px; font-family: 'Garamond', serif;">[PROPERTY_PRICE]</p>
+
+      <!-- Date/Time Box -->
+      <div style="background: #f8f7f5; border: 2px solid #c9a961; border-radius: 8px; padding: 28px; margin-bottom: 28px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: center;">
+          <div>
+            <p style="font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #c9a961; margin-bottom: 8px; font-weight: 600;">Date</p>
+            <p style="font-family: 'Garamond', serif; font-size: 24px; font-weight: 400; color: #1a1a1a;">Sunday</p>
+            <p style="font-size: 13px; color: #666;">[DATE]</p>
+          </div>
+          <div>
+            <p style="font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #c9a961; margin-bottom: 8px; font-weight: 600;">Time</p>
+            <p style="font-family: 'Garamond', serif; font-size: 24px; font-weight: 400; color: #1a1a1a;">[TIME]</p>
+            <p style="font-size: 13px; color: #666;">EST</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+        <a href="[REGISTER_URL]" style="display: inline-block; padding: 14px 42px; background: #c9a961; color: #fff; font-size: 12px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; border: 1px solid #c9a961;">Register for Tour</a>
+        <a href="[DIRECTIONS_URL]" style="display: inline-block; padding: 14px 42px; background: #1a1a1a; color: #fff; font-size: 12px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; border: 1px solid #1a1a1a;">Get Directions</a>
+      </div>
+    </div>
+
+    <!-- Property Highlights Grid -->
+    <div style="padding: 48px 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; background: #fff; border-bottom: 1px solid #e8e6e2;">
+      <div>
+        <p style="font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #c9a961; margin-bottom: 14px; font-weight: 400;">Bedrooms</p>
+        <p style="font-family: 'Garamond', serif; font-size: 44px; font-weight: 400; color: #1a1a1a;">[BEDS]</p>
+      </div>
+      <div>
+        <p style="font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #c9a961; margin-bottom: 14px; font-weight: 400;">Bathrooms</p>
+        <p style="font-family: 'Garamond', serif; font-size: 44px; font-weight: 400; color: #1a1a1a;">[BATHS]</p>
+      </div>
+      <div>
+        <p style="font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #c9a961; margin-bottom: 14px; font-weight: 400;">Square Feet</p>
+        <p style="font-family: 'Garamond', serif; font-size: 44px; font-weight: 400; color: #1a1a1a;">[SQFT]</p>
+      </div>
+      <div>
+        <p style="font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #c9a961; margin-bottom: 14px; font-weight: 400;">Lot Size</p>
+        <p style="font-family: 'Garamond', serif; font-size: 44px; font-weight: 400; color: #1a1a1a;">[LOT_SIZE]</p>
+      </div>
+    </div>
+
+    <!-- Photo Gallery (3-column) -->
+    <div style="padding: 40px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; background: #fff; border-bottom: 1px solid #e8e6e2;">
+      <img src="[IMAGE_1_URL]" alt="Property Photo 1" style="border: 1px solid #e8e6e2; aspect-ratio: 1; object-fit: cover;">
+      <img src="[IMAGE_2_URL]" alt="Property Photo 2" style="border: 1px solid #e8e6e2; aspect-ratio: 1; object-fit: cover;">
+      <img src="[IMAGE_3_URL]" alt="Property Photo 3" style="border: 1px solid #e8e6e2; aspect-ratio: 1; object-fit: cover;">
+    </div>
+
+    <!-- Description Section -->
+    <div style="padding: 56px 40px; background: #fff; border-bottom: 1px solid #e8e6e2;">
+      <h2 style="font-family: 'Garamond', serif; font-size: 44px; font-weight: 400; margin-bottom: 28px; line-height: 1.2; color: #1a1a1a;">Discover Your <span style="color: #c9a961;">Next Home</span></h2>
+      <p style="font-size: 15px; line-height: 1.9; color: #555; margin-bottom: 18px;">[PROPERTY_DESCRIPTION]</p>
+      <p style="font-size: 15px; line-height: 1.9; color: #555;">Join us this Sunday for an exclusive showing. Walk through the home, ask questions, and experience what makes this property special.</p>
+    </div>
+
+    <!-- Highlights Section -->
+    <div style="padding: 48px 40px; background: #f8f7f5; border-bottom: 1px solid #e8e6e2;">
+      <h3 style="font-family: 'Garamond', serif; font-size: 28px; font-weight: 400; margin-bottom: 28px; color: #1a1a1a;">Property Highlights</h3>
+      <ul style="list-style: none; font-size: 15px; line-height: 2; color: #555; padding: 0;">
+        <li style="margin-bottom: 12px; padding-left: 28px; position: relative;"><span style="position: absolute; left: 0; color: #c9a961; font-weight: 700;">✦</span> [FEATURE_1]</li>
+        <li style="margin-bottom: 12px; padding-left: 28px; position: relative;"><span style="position: absolute; left: 0; color: #c9a961; font-weight: 700;">✦</span> [FEATURE_2]</li>
+        <li style="margin-bottom: 12px; padding-left: 28px; position: relative;"><span style="position: absolute; left: 0; color: #c9a961; font-weight: 700;">✦</span> [FEATURE_3]</li>
+        <li style="padding-left: 28px; position: relative;"><span style="position: absolute; left: 0; color: #c9a961; font-weight: 700;">✦</span> [FEATURE_4]</li>
+      </ul>
+    </div>
+
+    <!-- Directions & Details -->
+    <div style="padding: 48px 40px; background: #fff; border-bottom: 1px solid #e8e6e2;">
+      <h3 style="font-family: 'Garamond', serif; font-size: 28px; font-weight: 400; margin-bottom: 24px; color: #1a1a1a;">Getting There</h3>
+      <p style="font-size: 15px; color: #555; line-height: 1.9; margin-bottom: 24px;">[LOCATION_DETAILS]</p>
+      <p style="font-size: 15px; color: #555; line-height: 1.9;"><strong style="color: #1a1a1a;">Parking:</strong> [PARKING_INFO]</p>
+    </div>
+
+    <!-- CTA Section -->
+    <div style="padding: 56px 40px; text-align: center; background: #f5f5f5;">
+      <h3 style="font-family: 'Garamond', serif; font-size: 36px; font-weight: 400; margin-bottom: 24px; color: #1a1a1a;">See You Sunday</h3>
+      <p style="font-size: 14px; color: #666; margin-bottom: 24px; line-height: 1.8;">Have questions? Reach out anytime. We're here to help.</p>
+      <a href="[REGISTER_URL]" style="display: inline-block; padding: 16px 52px; color: #fff; font-size: 12px; font-weight: 400; letter-spacing: 1.2px; text-transform: uppercase; border: none; background-color: #C7A77E">Register Now</a>
+    </div>
+
+    <!-- Agent Section -->
+    <div style="padding: 56px 40px; background: #fff; border-top: 1px solid #e8e6e2; border-bottom: 1px solid #e8e6e2; text-align: center;">
+      <img src="[AGENT_PHOTO_URL]" alt="Agent Name" style="width: 140px; height: 140px; border-radius: 50%; object-fit: cover; margin-bottom: 24px; display: inline-block;">
+      <h4 style="font-family: 'Garamond', serif; font-size: 28px; font-weight: 400; margin-bottom: 8px; color: #1a1a1a;">[AGENT_NAME]</h4>
+      <p style="font-size: 13px; color: #666; margin-bottom: 24px; line-height: 1.6;">Luxury Real Estate Specialist · [AREA]</p>
+      <div style="display: flex; gap: 28px; font-size: 13px; flex-wrap: wrap; justify-content: center;">
+        <a href="tel:[AGENT_PHONE]" style="color: #c9a961; font-weight: 400; letter-spacing: 0.5px;">[AGENT_PHONE]</a>
+        <a href="mailto:[AGENT_EMAIL]" style="color: #c9a961; font-weight: 400; letter-spacing: 0.5px;">[AGENT_EMAIL]</a>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="padding: 40px; background: #f5f5f5; font-size: 12px; color: #999; line-height: 1.8; text-align: center; border-top: 1px solid #e8e6e2;">
+      <p style="margin-bottom: 10px;">Marr &amp; Caruso Realty Group · CT License # RES.0836613</p>
+      <p>This email was sent for informational purposes. All information believed accurate but not guaranteed. Equal Housing Opportunity.</p>
+    </div>
+
+  </div>
+</div>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Garamond:wght@400;600;700&family=Inter:wght@400;500&display=swap');
+
+  body, * { margin: 0; padding: 0; box-sizing: border-box; }
+  a { color: inherit; text-decoration: none; }
+  img { display: block; width: 100%; height: auto; }
+  @media (max-width: 640px) {
+    .header-title { white-space: nowrap; }
+  }
+</style>
+</body>
+</html>
