@@ -1,0 +1,197 @@
+/* IDX Carousel Widget 165642 - GLOBAL + MOBILE OPTIMIZED */
+/* NO PADDING, NO GAPS VERSION */
+
+/* ===== GLOBAL: NEUTRALIZE ALL INTERFERING WRAPPERS ===== */
+.vibe-section,
+.vibe-block,
+.ghl-widget,
+.widget-container,
+[class*="wrapper"],
+[class*="container"],
+[class*="frame"] {
+  overflow: visible !important;
+  width: auto !important;
+  max-width: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+body, html {
+  overflow-x: visible !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* ===== GLOBAL: CAROUSEL HOST - FULL VIEWPORT BLEED ===== */
+.idx-carousel-host,
+.ahn-idx-widget-mount,
+[data-widget-id="165642"] {
+  width: 100vw !important;
+  max-width: 100vw !important;
+  position: relative !important;
+  left: 50% !important;
+  right: 50% !important;
+  margin-left: -50vw !important;
+  margin-right: -50vw !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  user-select: auto !important;
+  -webkit-user-drag: none !important;
+}
+
+/* ===== GLOBAL: CAROUSEL TRACK ===== */
+.idx-listings-carousel,
+.idx-listings-carousel__wrap,
+.idx-listings-carousel__inner {
+  display: flex !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  gap: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scroll-behavior: smooth !important;
+  position: relative !important;
+  transform: none !important;
+}
+
+/* ===== GLOBAL: CARDS - NO CLIPPING ===== */
+.idx-property-card,
+.idx-property-card__wrap {
+  flex-shrink: 0 !important;
+  overflow: visible !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  gap: 0 !important;
+  transform: none !important;
+  position: static !important;
+}
+
+/* ===== GLOBAL: CARD PHOTOS & CONTENT ===== */
+.idx-property-card__photo,
+.idx-property-card__image,
+.idx-property-card__content,
+.idx-property-card__details,
+.idx-property-card__header,
+.idx-property-card__badge {
+  overflow: visible !important;
+  width: 100% !important;
+  height: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  gap: 0 !important;
+  white-space: normal !important;
+}
+
+.idx-property-card__photo img,
+.idx-property-card__image img {
+  width: 100% !important;
+  height: auto !important;
+  object-fit: cover !important;
+  display: block !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* ===== DESKTOP: FULL WIDTH CARDS (NO GAPS) ===== */
+@media (min-width: 1025px) {
+  .idx-property-card,
+  .idx-property-card__wrap {
+    width: 276px !important;
+    min-width: 276px !important;
+    flex: 0 0 276px !important;
+    margin: 0 !important;
+    gap: 0 !important;
+  }
+
+  .idx-listings-carousel {
+    gap: 0 !important;
+  }
+}
+
+/* ===== TABLET: FULL WIDTH CARDS (NO GAPS) ===== */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .idx-property-card,
+  .idx-property-card__wrap {
+    width: 25vw !important;
+    min-width: 25vw !important;
+    flex: 0 0 25vw !important;
+    margin: 0 !important;
+    gap: 0 !important;
+  }
+
+  .idx-listings-carousel {
+    gap: 0 !important;
+  }
+}
+
+/* ===== MOBILE: FULL WIDTH CARDS (NO GAPS) ===== */
+@media (max-width: 767px) {
+  .idx-carousel-host,
+  .ahn-idx-widget-mount,
+  [data-widget-id="165642"] {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    left: 50% !important;
+    margin-left: -50vw !important;
+    margin-right: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  .idx-listings-carousel,
+  .idx-listings-carousel__wrap,
+  .idx-listings-carousel__inner {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory !important;
+  }
+
+  .idx-property-card,
+  .idx-property-card__wrap {
+    width: 50vw !important;
+    min-width: 50vw !important;
+    flex: 0 0 50vw !important;
+    margin: 0 !important;
+    gap: 0 !important;
+    padding: 0 !important;
+    scroll-snap-align: start !important;
+  }
+
+  /* Ensure mobile cards don't clip content */
+  .idx-property-card__photo,
+  .idx-property-card__image {
+    overflow: visible !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Prevent text crop on mobile */
+  .idx-property-card__details,
+  .idx-property-card__header {
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+/* ===== SMALL MOBILE: FULL WIDTH CARDS (NO GAPS) ===== */
+@media (max-width: 479px) {
+  .idx-property-card,
+  .idx-property-card__wrap {
+    width: 100vw !important;
+    min-width: 100vw !important;
+    flex: 0 0 100vw !important;
+    margin: 0 !important;
+    gap: 0 !important;
+    padding: 0 !important;
+  }
+}
