@@ -8,68 +8,83 @@ export async function onRequestPost(context) {
 
     // Handle multipart form data uploads
     if (contentType.includes('multipart/form-data')) {
-      const formData = await request.formData();
-      const file = formData.get('file');
+      try {
+        const formData = await request.formData();
+        const file = formData.get('file');
 
-      if (!file) {
-        return json({ error: 'No file provided' }, 400);
-      }
-
-      // Validate file type and size
-      const maxSize = 10 * 1024 * 1024; // 10 MB
-      if (file.size > maxSize) {
-        return json({ error: 'File too large (max 10 MB)' }, 413);
-      }
-
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
-      if (!allowedTypes.includes(file.type)) {
-        return json({ error: 'Invalid file type (JPG, PNG, WebP, GIF, PDF only)' }, 400);
-      }
-
-      // Generate a unique file ID
-      const fileId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      const fileName = file.name;
-
-      // Store file metadata (in production, this would be stored in a database or object storage)
-      // For now, we'll return a success response with the file metadata
-      return json({
-        success: true,
-        file: {
-          id: fileId,
-          name: fileName,
-          type: file.type,
-          size: file.size,
-          uploadedAt: new Date().toISOString(),
-          url: `/media/${fileId}`
+        if (!file) {
+          return json({ success: false, error: 'No file provided' }, 400);
         }
-      }, 200);
+
+        // Validate file type and size
+        const maxSize = 10 * 1024 * 1024; // 10 MB
+        if (file.size > maxSize) {
+          return json({ success: false, error: 'File too large (max 10 MB)' }, 413);
+        }
+
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
+        if (!allowedTypes.includes(file.type)) {
+          return json({ success: false, error: 'Invalid file type (JPG, PNG, WebP, GIF, PDF only)' }, 400);
+        }
+
+        // Generate a unique file ID
+        const fileId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const fileName = file.name;
+
+        // Store file metadata (in production, this would be stored in a database or object storage)
+        // For now, we'll return a success response with the file metadata
+        return json({
+          success: true,
+          file: {
+            id: fileId,
+            name: fileName,
+            type: file.type,
+            size: file.size,
+            uploadedAt: new Date().toISOString(),
+            url: `/media/${fileId}`
+          }
+        }, 200);
+      } catch (uploadError) {
+        console.error('Form data parsing error:', uploadError);
+        return json({ success: false, error: 'Failed to process file upload' }, 400);
+      }
     }
 
     // Handle JSON requests for fetching media
-    if (contentType.includes('application/json')) {
-      const body = await request.json().catch(() => ({}));
+    if (contentType.includes('application/json') || !contentType) {
+      try {
+        const body = await request.json().catch(() => ({}));
 
-      // Handle different actions
-      if (body.action === 'list') {
-        // Return empty list of media for now
+        // Handle different actions
+        if (body.action === 'list') {
+          return json({
+            success: true,
+            media: []
+          }, 200);
+        }
+
+        if (body.action === 'delete' && body.fileId) {
+          return json({
+            success: true,
+            message: 'File deleted successfully'
+          }, 200);
+        }
+
+        // Default to listing media if no action specified
         return json({
           success: true,
           media: []
         }, 200);
-      }
-
-      if (body.action === 'delete' && body.fileId) {
-        return json({
-          success: true,
-          message: 'File deleted successfully'
-        }, 200);
+      } catch (jsonError) {
+        console.error('JSON parsing error:', jsonError);
+        return json({ success: false, error: 'Invalid JSON in request body' }, 400);
       }
     }
 
-    return json({ error: 'Invalid request' }, 400);
+    return json({ success: false, error: 'Invalid content type' }, 400);
   } catch (error) {
     console.error('Media API error:', error);
-    return json({ error: error.message || 'Internal server error' }, 500);
+    return json({ success: false, error: error.message || 'Internal server error' }, 500);
   }
 }
 
@@ -85,10 +100,17 @@ export async function onRequestGet(context) {
       }, 200);
     }
 
-    return json({ error: 'Invalid action' }, 400);
+    if (action === 'check') {
+      return json({
+        success: true,
+        status: 'ok'
+      }, 200);
+    }
+
+    return json({ success: false, error: 'Invalid action' }, 400);
   } catch (error) {
     console.error('Media API error:', error);
-    return json({ error: error.message || 'Internal server error' }, 500);
+    return json({ success: false, error: error.message || 'Internal server error' }, 500);
   }
 }
 
